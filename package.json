@@ -8,8 +8,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js"
+    
   },
-  
   "keywords": [],
   "author": "Lyappunov",
   "license": "ISC",
@@ -21,6 +21,10 @@
     "is-empty": "^1.2.0",
     "jsonwebtoken": "^8.5.1",
     "mongodb": "^4.1.2",
+    "path": "^0.12.7",
     "validator": "^13.6.0"
-  }
+  },
+  "engines": {
+    "node": "14.17.0"
+}
 }
