@@ -195,4 +195,60 @@ recordRoutes.route("/record/login").post(function (req, res) {
       
   });
 
+  recordRoutes.route("/record/tokenAdd").post(function (req, response) {
+    console.log('the request body for add new token is ', req.body)
+    let db_connect = dbo.getDb();
+    let myobj = {
+      tokenname: req.body.tokenname,
+      tokensymbol: req.body.tokensymbol,
+      tokentype: req.body.tokentype,
+      tokenaddress: req.body.tokenaddress,
+      totalsupply: req.body.totalsupply,
+    };
+    db_connect.collection("tokens").insertOne(myobj, function (err, res) {
+      if (err) throw err;
+      response.json(res);
+    });
+  });
+
+  recordRoutes.route("/tokens").get(function (req, res) {
+    console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
+    let db_connect = dbo.getDb();
+    db_connect
+      .collection("tokens")
+      .find({})
+      .toArray(function (err, result) {
+        if (err) throw err;
+        res.json(result);
+      });
+  });
+
+  recordRoutes.route("/record/tranadd").post(function (req, response) {
+    console.log('the request body for saving new transaction is ', req.body)
+    let db_connect = dbo.getDb();
+    let myobj = {
+      personName: req.body.personName,
+      walletAddress: req.body.walletAddress,
+      tranDate: req.body.tranDate,
+      tokenName: req.body.tokenName,
+      tranType: req.body.tranType,
+      amount : req.body.amount
+    };
+    db_connect.collection("transactions").insertOne(myobj, function (err, res) {
+      if (err) throw err;
+      response.json(res);
+    });
+  });
+
+  recordRoutes.route("/transaction").get(function (req, res) {
+    let db_connect = dbo.getDb();
+    db_connect
+      .collection("transactions")
+      .find({})
+      .toArray(function (err, result) {
+        if (err) throw err;
+        res.json(result);
+      });
+  });
+
 module.exports = recordRoutes;
