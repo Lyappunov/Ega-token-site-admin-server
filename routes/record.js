@@ -63,9 +63,8 @@ recordRoutes.route("/update/:id").post(function (req, response) {
   let myquery = { _id: ObjectId( req.params.id )};
   let newvalues = {
     $set: {
-      person_name: req.body.person_name,
-      person_position: req.body.person_position,
-      person_level: req.body.person_level,
+      name: req.body.name,
+      phonenumber: req.body.phonenumber
     },
   };
   db_connect
@@ -89,7 +88,6 @@ recordRoutes.route("/:id").delete((req, response) => {
 });
 
 recordRoutes.route("/record/login").post(function (req, res) {
-    console.log('>>>>>>>>>>>>>>>>>asjdfklasjkdfjskaljdfklsajkl', req.body)
     const { errors, isValid } = validateLoginInput(req.body);
     if (!isValid) {
         return res.status(400).json(errors);
@@ -212,7 +210,6 @@ recordRoutes.route("/record/login").post(function (req, res) {
   });
 
   recordRoutes.route("/tokens").get(function (req, res) {
-    console.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
     let db_connect = dbo.getDb();
     db_connect
       .collection("tokens")
@@ -221,6 +218,47 @@ recordRoutes.route("/record/login").post(function (req, res) {
         if (err) throw err;
         res.json(result);
       });
+  });
+
+  recordRoutes.route("/tokens/:id").get(function (req, res) {
+    let db_connect = dbo.getDb();
+    let myquery = { _id: ObjectId( req.params.id )};
+    db_connect
+        .collection("tokens")
+        .findOne(myquery, function (err, result) {
+          if (err) throw err;
+          res.json(result);
+        });
+  });
+  
+  recordRoutes.route("/tokenupdate/:id").post(function (req, response) {
+    let db_connect = dbo.getDb();
+    let myquery = { _id: ObjectId( req.params.id )};
+    let newvalues = {
+      $set: {
+        tokenname: req.body.tokenname,
+        tokensymbol: req.body.tokensymbol,
+        tokentype: req.body.tokentype,
+        tokenaddress: req.body.tokenaddress,
+        totalsupply: req.body.totalsupply,
+      },
+    };
+    db_connect
+      .collection("tokens")
+      .updateOne(myquery, newvalues, function (err, res) {
+        if (err) throw err;
+        console.log("token updated");
+        response.json(res);
+      });
+  });
+  recordRoutes.route("/tokendelete/:id").delete((req, response) => {
+    let db_connect = dbo.getDb();
+    let myquery = { _id: ObjectId( req.params.id )};
+    db_connect.collection("tokens").deleteOne(myquery, function (err, obj) {
+      if (err) throw err;
+      console.log("token deleted");
+      response.status(obj);
+    });
   });
 
   recordRoutes.route("/record/tranadd").post(function (req, response) {
@@ -248,6 +286,95 @@ recordRoutes.route("/record/login").post(function (req, res) {
       .toArray(function (err, result) {
         if (err) throw err;
         res.json(result);
+      });
+  });
+
+  recordRoutes.route("/tokenprice").get(function (req, res) {
+    let db_connect = dbo.getDb();
+    // let myquery = { _id: ObjectId( req.params.id )};
+    db_connect
+        .collection("tokenprice")
+        .find({})
+        .toArray(function (err, result) {
+          if (err) throw err;
+          res.json(result);
+        });
+  });
+  
+  recordRoutes.route("/tokenpriceupdate/:id").post(function (req, response) {
+    let db_connect = dbo.getDb();
+    let myquery = { _id: ObjectId( req.params.id )};
+    let newvalues = {
+      $set: {
+        ega: req.body.ega,
+        mos: req.body.mos
+      },
+    };
+    db_connect
+      .collection("tokenprice")
+      .updateOne(myquery, newvalues, function (err, res) {
+        if (err) throw err;
+        console.log("token updated");
+        response.json(res);
+      });
+  });
+
+  recordRoutes.route("/limitamount").get(function (req, res) {
+    let db_connect = dbo.getDb();
+    // let myquery = { _id: ObjectId( req.params.id )};
+    db_connect
+        .collection("limitedamount")
+        .find({})
+        .toArray(function (err, result) {
+          if (err) throw err;
+          res.json(result);
+        });
+  });
+  
+  recordRoutes.route("/limitamountupdate/:id").post(function (req, response) {
+    let db_connect = dbo.getDb();
+    let myquery = { _id: ObjectId( req.params.id )};
+    let newvalues = {
+      $set: {
+        saleMAX: req.body.saleMAX,
+        buyMIN: req.body.buyMIN
+      },
+    };
+    db_connect
+      .collection("limitedamount")
+      .updateOne(myquery, newvalues, function (err, res) {
+        if (err) throw err;
+        console.log("limit amount updated");
+        response.json(res);
+      });
+  });
+
+  recordRoutes.route("/apikey").get(function (req, res) {
+    let db_connect = dbo.getDb();
+    // let myquery = { _id: ObjectId( req.params.id )};
+    db_connect
+        .collection("apikey")
+        .find({})
+        .toArray(function (err, result) {
+          if (err) throw err;
+          res.json(result);
+        });
+  });
+  
+  recordRoutes.route("/apikeyupdate/:id").post(function (req, response) {
+    let db_connect = dbo.getDb();
+    let myquery = { _id: ObjectId( req.params.id )};
+    let newvalues = {
+      $set: {
+        bscscan: req.body.bscscan
+      },
+    };
+    db_connect
+      .collection("apikey")
+      .updateOne(myquery, newvalues, function (err, res) {
+        if (err) throw err;
+        console.log("apikey updated");
+        response.json(res);
       });
   });
 
