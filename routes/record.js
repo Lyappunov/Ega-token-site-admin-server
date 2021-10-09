@@ -14,6 +14,7 @@ const ObjectId = require("mongodb").ObjectId;
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const https = require('https');
+const Telegram = require('telegram-notify') ;
 const asyncHandler = require('express-async-handler');
 const validateLoginInput = require('../validation/login');
 const validateRegisterInput = require('../validation/register');
@@ -57,53 +58,6 @@ function generalDateRange(){
 }
 
 const dateRangeGlobal = generalDateRange()
-
-
-function getTokenPrice () {
-  
-  https.get('https://api.bscscan.com/api?module=stats&action=bnbprice&apikey=AFUNJEG3MDP4VF8XIMQSJVBAHTQ7M3KEXV', (resp) => {
-        let data = '';
-
-        // A chunk of data has been received.
-        resp.on('data', (chunk) => {
-            data += chunk;
-        });
-
-        // The whole response has been received. Print out the result.
-        resp.on('end', () => {
-          
-            let bnbPrice = JSON.parse(data).result.ethusd
-            
-            priceClss.getPrice().then(bal =>{
-                bitquery.loadBitqueryDataBTCbalance().then(btc=>{
-                    
-                    let btcBalance = btc.data.bitcoin.outputs[0].value;
-                    
-                    bitquery.loadBitqueryDataUSDT(dateRangeGlobal[0]).then(usds =>{
-                        let transaction_obj_arr = [];
-                        let wb_usdt_arr = usds.data.ethereum.dexTrades;
-                        wb_usdt_arr.map((arr, index) => {
-                        // const ega_price = (sessionStorage.getItem('bnbBalance') / sessionStorage.getItem('egaBalance')) * (Number(arr.quotePrice))/100
-                        const ega_price = (( (btcBalance*0.825) / Number(bal.egaBalance))*1000000) * Number(arr.quotePrice);
-                            transaction_obj_arr.push({
-                                d: arr.timeInterval.minute,
-                                p: ega_price,
-                                x: index,
-                                y: ega_price,
-                            });
-                        })
-                        var price = (transaction_obj_arr[transaction_obj_arr.length - 1].p).toFixed(11)
-                        console.log('here is oaky',price);
-                        return price;
-                    })
-                })                
-            })
-        });
-    }).on("error", (err) => {
-          console.log("Error: " + err.message);
-    });
-}
-
 
 // This section will help you get a list of all the records.
 recordRoutes.route("/record").get(function (req, res) {
@@ -466,50 +420,64 @@ recordRoutes.route("/record/login").post(function (req, res) {
   });
 
   recordRoutes.route("/egaprice").get(asyncHandler(async function (req, response) {
-    https.get('https://api.bscscan.com/api?module=stats&action=bnbprice&apikey=AFUNJEG3MDP4VF8XIMQSJVBAHTQ7M3KEXV', (resp) => {
-        let data = '';
-
-        // A chunk of data has been received.
-        resp.on('data', (chunk) => {
-            data += chunk;
-        });
-
-        // The whole response has been received. Print out the result.
-        resp.on('end', () => {
+    priceClss.getPrice().then(bal =>{
+      bitquery.loadBitqueryDataBTCbalance().then(btc=>{
           
-            let bnbPrice = JSON.parse(data).result.ethusd
+        let btcBalance = btc.data.bitcoin.outputs[0].value;
+        
+        bitquery.loadBitqueryDataUSDT(dateRangeGlobal[0]).then(usds =>{
+            let wb_usdt_arr = usds.data.ethereum.dexTrades;
+            let arr = wb_usdt_arr[0];
+            const ega_price = (( (btcBalance*0.775) / Number(bal.egaBalance))*1000000) * Number(arr.quotePrice);
+            // var price = (transaction_obj_arr[transaction_obj_arr.length - 1].p).toFixed(11)
+            var price = ega_price.toFixed(11)
+            response.json(price)    
+        })
+      })                
+    })
+  }))
+
+
+  recordRoutes.route("/telegram").post(asyncHandler(async function (req, responseresult) {
+               
+    priceClss.getPrice().then(bal =>{
+        bitquery.loadBitqueryDataBTCbalance().then(btc=>{
             
-            priceClss.getPrice().then(bal =>{
-                bitquery.loadBitqueryDataBTCbalance().then(btc=>{
-                    
-                    let btcBalance = btc.data.bitcoin.outputs[0].value;
-                    
-                    bitquery.loadBitqueryDataUSDT(dateRangeGlobal[0]).then(usds =>{
-                        // let transaction_obj_arr = [];
-                        let wb_usdt_arr = usds.data.ethereum.dexTrades;
-                        // wb_usdt_arr.map((arr, index) => {
-                        // // const ega_price = (sessionStorage.getItem('bnbBalance') / sessionStorage.getItem('egaBalance')) * (Number(arr.quotePrice))/100
-                        // const ega_price = (( (btcBalance*0.785) / Number(bal.egaBalance))*1000000) * Number(arr.quotePrice);
-                        //     transaction_obj_arr.push({
-                        //         d: arr.timeInterval.minute,
-                        //         p: ega_price,
-                        //         x: index,
-                        //         y: ega_price,
-                        //     });
-                        // })
-                        let arr = wb_usdt_arr[0];
-                        const ega_price = (( (btcBalance*0.785) / Number(bal.egaBalance))*1000000) * Number(arr.quotePrice);
-                        // var price = (transaction_obj_arr[transaction_obj_arr.length - 1].p).toFixed(11)
-                        var price = ega_price.toFixed(11)
-                        console.log('here is oaky',price);
-                        response.json(price);
-                    })
-                })                
+            let btcBalance = btc.data.bitcoin.outputs[0].value;
+            
+            bitquery.loadBitqueryDataUSDT(dateRangeGlobal[0]).then(usds =>{
+                let wb_usdt_arr = usds.data.ethereum.dexTrades;
+                let arr = wb_usdt_arr[0];
+                const ega_price = (( (btcBalance*0.775) / Number(bal.egaBalance))*1000000) * Number(arr.quotePrice);
+                // var price = (transaction_obj_arr[transaction_obj_arr.length - 1].p).toFixed(11)
+                var price = ega_price.toFixed(11)
+                console.log('here is oaky',price);
+                let db_connect = dbo.getDb();
+                // let myquery = { _id: ObjectId( req.params.id )};
+                db_connect
+                .collection("tokenprice")
+                .find({})
+                .toArray(function (err, result) {
+                  if (err) throw err;
+                  var displayPrice = Number(price) + Number(result[0].ega)
+                  
+                  let notify = new Telegram({token:keys.botToken, chatId:keys.chatId})
+                  var message = 'The current price of EGA token is ' + displayPrice + ' USD'
+                  const fetchOption = {}
+                  const apiOption = {
+                      disable_web_page_preview:false,
+                      disable_notification:false
+                  }
+                  notify.send(message,fetchOption, apiOption).then(response => {
+                      responseresult.send(response);
+                  });
+                });
+                
             })
-        });
-    }).on("error", (err) => {
-          console.log("Error: " + err.message);
-    });
+        })                
+    })
+     
+    
   }))
 
 module.exports = recordRoutes;
