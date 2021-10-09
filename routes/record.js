@@ -13,9 +13,96 @@ const ObjectId = require("mongodb").ObjectId;
 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const https = require('https');
+const asyncHandler = require('express-async-handler');
 const validateLoginInput = require('../validation/login');
 const validateRegisterInput = require('../validation/register');
 const keys = require('../config/keys');
+const Price = require( '../utils/Price').Price;
+const Bitquery = require( '../utils/bitquery').Bitquery;
+
+var priceClss = new Price();
+var bitquery = new Bitquery();
+var egaPrice = 0;
+
+function generalDateRange(){
+  var range=[]
+  var today = new Date();
+  var thisyear = today.getFullYear();
+  var lastyear = thisyear
+  var beforeDay = parseInt(today.getDate()) - 10;
+  var thisMonth = today.getMonth()<10?'0'+(today.getMonth() + 1):(today.getMonth() + 1)
+  var lastMonth = thisMonth
+  if(beforeDay<=0)
+   lastMonth = today.getMonth()<10?'0'+(today.getMonth()):(today.getMonth())
+  if(thisMonth == '01'){
+    lastMonth = '12'
+    lastyear = thisyear - 1
+  }
+  
+  var thisDay = today.getDate()<10?'0'+(today.getDate()):today.getDate();
+  var lastDay = (beforeDay<10)?'0'+beforeDay:beforeDay
+  if(beforeDay<=0)lastDay = 30 + beforeDay
+  var thisMonthToday = thisyear+'-'+thisMonth+'-'+thisDay
+  var lastMonthToday = lastyear+'-'+lastMonth+'-'+lastDay
+  var Hours = today.getHours()<10?'0'+today.getHours():today.getHours()
+  var Minutes = today.getMinutes()<10?'0'+today.getMinutes():today.getMinutes()
+  var Seconds = today.getSeconds()<10?'0'+today.getSeconds():today.getSeconds();
+  var time = Hours+ ":" + Minutes + ":" + Seconds
+  var fromDateTime = lastMonthToday + 'T' + time + 'Z'
+  var toDateTime = thisMonthToday + 'T' + time + 'Z'
+  range.push(fromDateTime)
+  range.push(toDateTime)
+  return range
+}
+
+const dateRangeGlobal = generalDateRange()
+
+
+function getTokenPrice () {
+  
+  https.get('https://api.bscscan.com/api?module=stats&action=bnbprice&apikey=AFUNJEG3MDP4VF8XIMQSJVBAHTQ7M3KEXV', (resp) => {
+        let data = '';
+
+        // A chunk of data has been received.
+        resp.on('data', (chunk) => {
+            data += chunk;
+        });
+
+        // The whole response has been received. Print out the result.
+        resp.on('end', () => {
+          
+            let bnbPrice = JSON.parse(data).result.ethusd
+            
+            priceClss.getPrice().then(bal =>{
+                bitquery.loadBitqueryDataBTCbalance().then(btc=>{
+                    
+                    let btcBalance = btc.data.bitcoin.outputs[0].value;
+                    
+                    bitquery.loadBitqueryDataUSDT(dateRangeGlobal[0]).then(usds =>{
+                        let transaction_obj_arr = [];
+                        let wb_usdt_arr = usds.data.ethereum.dexTrades;
+                        wb_usdt_arr.map((arr, index) => {
+                        // const ega_price = (sessionStorage.getItem('bnbBalance') / sessionStorage.getItem('egaBalance')) * (Number(arr.quotePrice))/100
+                        const ega_price = (( (btcBalance*0.825) / Number(bal.egaBalance))*1000000) * Number(arr.quotePrice);
+                            transaction_obj_arr.push({
+                                d: arr.timeInterval.minute,
+                                p: ega_price,
+                                x: index,
+                                y: ega_price,
+                            });
+                        })
+                        var price = (transaction_obj_arr[transaction_obj_arr.length - 1].p).toFixed(11)
+                        console.log('here is oaky',price);
+                        return price;
+                    })
+                })                
+            })
+        });
+    }).on("error", (err) => {
+          console.log("Error: " + err.message);
+    });
+}
 
 
 // This section will help you get a list of all the records.
@@ -377,5 +464,52 @@ recordRoutes.route("/record/login").post(function (req, res) {
         response.json(res);
       });
   });
+
+  recordRoutes.route("/egaprice").get(asyncHandler(async function (req, response) {
+    https.get('https://api.bscscan.com/api?module=stats&action=bnbprice&apikey=AFUNJEG3MDP4VF8XIMQSJVBAHTQ7M3KEXV', (resp) => {
+        let data = '';
+
+        // A chunk of data has been received.
+        resp.on('data', (chunk) => {
+            data += chunk;
+        });
+
+        // The whole response has been received. Print out the result.
+        resp.on('end', () => {
+          
+            let bnbPrice = JSON.parse(data).result.ethusd
+            
+            priceClss.getPrice().then(bal =>{
+                bitquery.loadBitqueryDataBTCbalance().then(btc=>{
+                    
+                    let btcBalance = btc.data.bitcoin.outputs[0].value;
+                    
+                    bitquery.loadBitqueryDataUSDT(dateRangeGlobal[0]).then(usds =>{
+                        // let transaction_obj_arr = [];
+                        let wb_usdt_arr = usds.data.ethereum.dexTrades;
+                        // wb_usdt_arr.map((arr, index) => {
+                        // // const ega_price = (sessionStorage.getItem('bnbBalance') / sessionStorage.getItem('egaBalance')) * (Number(arr.quotePrice))/100
+                        // const ega_price = (( (btcBalance*0.785) / Number(bal.egaBalance))*1000000) * Number(arr.quotePrice);
+                        //     transaction_obj_arr.push({
+                        //         d: arr.timeInterval.minute,
+                        //         p: ega_price,
+                        //         x: index,
+                        //         y: ega_price,
+                        //     });
+                        // })
+                        let arr = wb_usdt_arr[0];
+                        const ega_price = (( (btcBalance*0.785) / Number(bal.egaBalance))*1000000) * Number(arr.quotePrice);
+                        // var price = (transaction_obj_arr[transaction_obj_arr.length - 1].p).toFixed(11)
+                        var price = ega_price.toFixed(11)
+                        console.log('here is oaky',price);
+                        response.json(price);
+                    })
+                })                
+            })
+        });
+    }).on("error", (err) => {
+          console.log("Error: " + err.message);
+    });
+  }))
 
 module.exports = recordRoutes;
