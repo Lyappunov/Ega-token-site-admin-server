@@ -437,6 +437,69 @@ recordRoutes.route("/record/login").post(function (req, res) {
     })
   }))
 
+  recordRoutes.route("/pairprice").post(asyncHandler(async function (req, response) {
+    https.get('https://api.coingecko.com/api/v3/coins/bitcoin', (resp) => {
+      let data = '';
+
+        resp.on('data', (chunk) => {
+            data += chunk;
+        });
+
+        resp.on('end', () => {
+          let btc_bnb = JSON.parse(data).market_data.current_price.bnb;
+          let btc_usd = JSON.parse(data).market_data.current_price.usd;
+          let btc_eur = JSON.parse(data).market_data.current_price.eur;
+          let bnb_usd = Number(btc_usd)/Number(btc_bnb);
+
+          priceClss.getPrice().then(bal =>{
+            bitquery.loadBitqueryDataBTCbalance().then(btc=>{
+              let btcBalance = btc.data.bitcoin.outputs[0].value;
+              let ega_price_cal = (( (btcBalance*0.775) / Number(bal.egaBalance))*1000000) * Number(btc_usd);
+              
+              let db_connect = dbo.getDb();
+              db_connect
+                  .collection("tokenprice")
+                  .find({})
+                  .toArray(function (err, result) {
+                    if (err) throw err;
+                    console.log('calculated ega price is ', result)
+                    let ega_price = ega_price_cal + Number(result[0].ega);
+                    let ega_bnb = ega_price/bnb_usd;
+                    let ega_btc = ega_price/Number(btc_usd);
+                    let ega_eur = ega_btc * Number(btc_eur);
+                    let ega_mos = ega_eur/result[0].mos;
+                    const pair_price = {
+                      ega_usd : ega_price.toFixed(12),
+                      ega_btc : ega_btc.toFixed(12),
+                      ega_bnb : ega_bnb.toFixed(12),
+                      ega_eur : ega_eur.toFixed(12),
+                      ega_mos : ega_mos.toFixed(12),
+                      date : dateRangeGlobal[1]
+                    }
+                    console.log(pair_price);
+                    db_connect.collection("pairprice").insertOne(pair_price, function (err, res) {
+                      if (err) throw err;
+                      response.json(res);
+                    });
+                  });
+              
+            })
+          });
+        });
+    });
+  }))
+
+  recordRoutes.route("/currentpairprice/:limit").get(function (req, res) {
+    let db_connect = dbo.getDb();
+    db_connect
+        .collection("pairprice")
+        .find({})
+        .sort({_id:-1}).limit(parseInt(req.params.limit))
+        .toArray(function (err, result) {
+          if (err) throw err;
+          res.json(result);
+        })
+  });
 
   recordRoutes.route("/telegram").post(asyncHandler(async function (req, responseresult) {
                
