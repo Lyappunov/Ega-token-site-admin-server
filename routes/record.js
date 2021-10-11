@@ -420,20 +420,23 @@ recordRoutes.route("/record/login").post(function (req, res) {
   });
 
   recordRoutes.route("/egaprice").get(asyncHandler(async function (req, response) {
-    priceClss.getPrice().then(bal =>{
-      bitquery.loadBitqueryDataBTCbalance().then(btc=>{
-          
-        let btcBalance = btc.data.bitcoin.outputs[0].value;
-        
-        bitquery.loadBitqueryDataUSDT(dateRangeGlobal[0]).then(usds =>{
-            let wb_usdt_arr = usds.data.ethereum.dexTrades;
-            let arr = wb_usdt_arr[0];
-            const ega_price = (( (btcBalance*0.775) / Number(bal.egaBalance))*1000000) * Number(arr.quotePrice);
-            // var price = (transaction_obj_arr[transaction_obj_arr.length - 1].p).toFixed(11)
-            var price = ega_price.toFixed(11)
-            response.json(price)    
+    https.get('https://api.coingecko.com/api/v3/coins/bitcoin', (resp) => {
+      let data = '';
+
+        resp.on('data', (chunk) => {
+            data += chunk;
+        });
+
+        resp.on('end', () => {
+          let btc_usd = JSON.parse(data).market_data.current_price.usd;
+          priceClss.getPrice().then(bal =>{
+            bitquery.loadBitqueryDataBTCbalance().then(btc=>{
+              let btcBalance = btc.data.bitcoin.outputs[0].value;
+              let ega_price_cal = (( (btcBalance*0.775) / Number(bal.egaBalance))*1000000) * Number(btc_usd);
+              response.json(ega_price_cal.toFixed(11));  
+            })
+          });
         })
-      })                
     })
   }))
 
