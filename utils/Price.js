@@ -41,7 +41,7 @@ class Price{
 		const egaToken = new web3.eth.Contract(EGA, this.egaAddress);
 
 		return {
-			egaBalance : await egaToken.methods.totalSupply().call()
+			totalsupply : await egaToken.methods.totalSupply().call()
 		}
 	}
 }
