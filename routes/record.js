@@ -440,6 +440,24 @@ recordRoutes.route("/record/login").post(function (req, res) {
     })
   }))
 
+  recordRoutes.route("/egabalance").get(asyncHandler(async function (req, response) {
+
+    priceClss.getBalanceInWallet().then(bal =>{
+        
+        response.json(bal);  
+    });
+  
+  }))
+
+  recordRoutes.route("/totalsupply").get(asyncHandler(async function (req, response) {
+
+    priceClss.getTotalSupply().then(bal =>{
+        
+        response.json(bal);  
+    });
+  
+  }))
+
   recordRoutes.route("/pairprice").post(asyncHandler(async function (req, response) {
     https.get('https://api.coingecko.com/api/v3/coins/bitcoin', (resp) => {
       let data = '';
