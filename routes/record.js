@@ -149,7 +149,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
             bcrypt.compare(password, user.password).then(isMatch => {
                 if (isMatch) {
                     const payload = {
-                        id: user.id,
+                        id: user._id,
                         name: user.name
                     };
                     jwt.sign(
