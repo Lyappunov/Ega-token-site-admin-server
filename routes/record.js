@@ -562,4 +562,24 @@ recordRoutes.route("/record/login").post(function (req, res) {
     })  
   }))
 
+  recordRoutes.route("/distributes").get(function (req, res) {
+    let db_connect = dbo.getDb();
+    // let myquery = { _id: ObjectId( req.params.id )};
+    db_connect
+        .collection("transactions")
+        .find({})
+        .toArray(function (err, result) {
+          if (err) throw err;
+          let total_buy = 0;
+          result.forEach(trans => {
+            if(trans.tranType == "BUY")
+            total_buy = total_buy + Number(trans.amount)
+            if(trans.tranType == "SELL")
+            total_buy = total_buy - Number(trans.amount)
+          });
+          console.log('total distributes is ', total_buy)
+          res.json(total_buy);
+        });
+  });
+
 module.exports = recordRoutes;
