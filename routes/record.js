@@ -472,10 +472,30 @@ recordRoutes.route("/record/login").post(function (req, res) {
           let btc_eur = JSON.parse(data).market_data.current_price.eur;
           let bnb_usd = Number(btc_usd)/Number(btc_bnb);
 
-          priceClss.getPrice().then(bal =>{
+          const totalSupply = 1000000000;
+          let db_connectinfo = dbo.getDb();
+          db_connectinfo
+            .collection("transactions")
+            .find({})
+            .toArray(function (err, result) {
+              if (err) throw err;
+              let total_buy = 0;
+              result.forEach(trans => {
+                if(trans.tranType == "BUY")
+                total_buy = total_buy + Number(trans.amount)
+                if(trans.tranType == "SELL")
+                total_buy = total_buy - Number(trans.amount)
+              });
+              let gah = {
+                distributes : total_buy,
+                balance : totalSupply - total_buy,
+                totalSupply : totalSupply
+              };
+            
             bitquery.loadBitqueryDataBTCbalance().then(btc=>{
               let btcBalance = btc.data.bitcoin.outputs[0].value;
-              let ega_price_cal = (( (btcBalance*0.775) / Number(bal.egaBalance))*1000000) * Number(btc_usd);
+              // let ega_price_cal = (( (btcBalance*0.775) / Number(bal.egaBalance))*1000000) * Number(btc_usd);
+              let ega_price_cal = (( (btcBalance*0.775) / (gah.balance *1000))) * Number(btc_usd);
               
               let db_connect = dbo.getDb();
               db_connect
@@ -498,6 +518,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
                       date : dateRangeGlobal[1]
                     }
                     console.log(pair_price);
+                    // response.json(pair_price);
                     db_connect.collection("pairprice").insertOne(pair_price, function (err, res) {
                       if (err) throw err;
                       response.json(res);
@@ -532,10 +553,31 @@ recordRoutes.route("/record/login").post(function (req, res) {
 
         resp.on('end', () => {
           let btc_usd = JSON.parse(data).market_data.current_price.usd;
-          priceClss.getPrice().then(bal =>{
+
+          const totalSupply = 1000000000;
+          let db_connectinfo = dbo.getDb();
+          db_connectinfo
+            .collection("transactions")
+            .find({})
+            .toArray(function (err, result) {
+              if (err) throw err;
+              let total_buy = 0;
+              result.forEach(trans => {
+                if(trans.tranType == "BUY")
+                total_buy = total_buy + Number(trans.amount)
+                if(trans.tranType == "SELL")
+                total_buy = total_buy - Number(trans.amount)
+              });
+              let gah = {
+                distributes : total_buy,
+                balance : totalSupply - total_buy,
+                totalSupply : totalSupply
+              };
+          
             bitquery.loadBitqueryDataBTCbalance().then(btc=>{
               let btcBalance = btc.data.bitcoin.outputs[0].value;
-              let ega_price_cal = (( (btcBalance*0.775) / Number(bal.egaBalance))*1000000) * Number(btc_usd);
+              // let ega_price_cal = (( (btcBalance*0.775) / Number(bal.egaBalance))*1000000) * Number(btc_usd);
+              let ega_price_cal = (( (btcBalance*0.775) / (gah.balance *1000))) * Number(btc_usd);
               var price = ega_price_cal.toFixed(11)
               let db_connect = dbo.getDb();
               db_connect
@@ -547,6 +589,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
                 
                 let notify = new Telegram({token:keys.botToken, chatId:keys.chatId})
                 var message = 'The current price of EGA token is ' + displayPrice + ' USD'
+                // responseresult.json(message)
                 const fetchOption = {}
                 const apiOption = {
                     disable_web_page_preview:false,
@@ -555,6 +598,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
                 notify.send(message,fetchOption, apiOption).then(response => {
                     responseresult.send(response);
                 });
+
               });
             })
           });
