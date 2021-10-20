@@ -562,24 +562,31 @@ recordRoutes.route("/record/login").post(function (req, res) {
     })  
   }))
 
-  recordRoutes.route("/distributes").get(function (req, res) {
+  recordRoutes.route("/getinfo").get(function (req, res) {
+    const totalSupply = 1000000000;
+  
     let db_connect = dbo.getDb();
-    // let myquery = { _id: ObjectId( req.params.id )};
-    db_connect
-        .collection("transactions")
-        .find({})
-        .toArray(function (err, result) {
-          if (err) throw err;
-          let total_buy = 0;
-          result.forEach(trans => {
-            if(trans.tranType == "BUY")
-            total_buy = total_buy + Number(trans.amount)
-            if(trans.tranType == "SELL")
-            total_buy = total_buy - Number(trans.amount)
+      // let myquery = { _id: ObjectId( req.params.id )};
+      db_connect
+          .collection("transactions")
+          .find({})
+          .toArray(function (err, result) {
+            if (err) throw err;
+            let total_buy = 0;
+            result.forEach(trans => {
+              if(trans.tranType == "BUY")
+              total_buy = total_buy + Number(trans.amount)
+              if(trans.tranType == "SELL")
+              total_buy = total_buy - Number(trans.amount)
+            });
+            let gah = {
+              distributes : total_buy,
+              balance : totalSupply - total_buy,
+              totalSupply : totalSupply
+            };
+            res.json( gah );
           });
-          console.log('total distributes is ', total_buy)
-          res.json(total_buy);
-        });
+    
   });
 
 module.exports = recordRoutes;
