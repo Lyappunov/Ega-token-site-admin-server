@@ -303,7 +303,6 @@ recordRoutes.route("/record/login").post(function (req, res) {
   });
 
   recordRoutes.route("/record/tranadd").post(function (req, response) {
-    console.log('the request body for saving new transaction is ', req.body)
     let db_connect = dbo.getDb();
     let myobj = {
       personName: req.body.personName,
@@ -314,6 +313,27 @@ recordRoutes.route("/record/login").post(function (req, res) {
       amount : req.body.amount
     };
     db_connect.collection("transactions").insertOne(myobj, function (err, res) {
+      if (err) throw err;
+      response.json(res);
+    });
+  });
+
+  recordRoutes.route("/record/salesubscribe").post(function (req, response) {
+    console.log('the request body for saving new subscribing is ', req.body)
+    let dateRange = generalDateRange()
+    let db_connect = dbo.getDb();
+    let myobj = {
+      subscriber: req.body.subscriber,
+      walletAddress: req.body.walletAddress,
+      subscribeDate: dateRange[1],
+      tokenName: req.body.tokenName,
+      amount: req.body.amount,
+      paymentKind : req.body.paymentKind,
+      usdPrice : req.body.usdPrice,
+      eurPrice : req.body.eurPrice,
+      paymentState:req.body.paymentState
+    };
+    db_connect.collection("saleSubscribe").insertOne(myobj, function (err, res) {
       if (err) throw err;
       response.json(res);
     });
