@@ -339,6 +339,17 @@ recordRoutes.route("/record/login").post(function (req, res) {
     });
   });
 
+  recordRoutes.route("/subscribe").get(function (req, res) {
+    let db_connect = dbo.getDb();
+    db_connect
+      .collection("saleSubscribe")
+      .find({paymentState:'pending'})
+      .toArray(function (err, result) {
+        if (err) throw err;
+        res.json(result);
+      });
+  });
+
   recordRoutes.route("/transaction").get(function (req, res) {
     let db_connect = dbo.getDb();
     db_connect
