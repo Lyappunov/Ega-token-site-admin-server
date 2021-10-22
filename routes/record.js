@@ -718,4 +718,92 @@ recordRoutes.route("/record/login").post(function (req, res) {
     
   });
 
+  recordRoutes.route("/getwalletbalance/:walletAddress").get(function (req, response) {
+    
+    let db_connect = dbo.getDb();
+      // let myquery = { _id: ObjectId( req.params.id )};
+      console.log(req.params.walletAddress)
+      db_connect
+          .collection("swapping")
+          .find({walletAddress : req.params.walletAddress})
+          .toArray(function (err, result) {
+            if (err) throw err;
+            let total_buy_gah = 0;
+            let total_buy_mos = 0;
+            result.forEach(trans => {
+              if(trans.toToken == "gah")
+              total_buy_gah = total_buy_gah + Number(trans.toAmount)
+              if(trans.fromToken == "gah")
+              total_buy_gah = total_buy_gah - Number(trans.fromAmount)
+              if(trans.toToken == "mos")
+              total_buy_mos = total_buy_mos + Number(trans.toAmount)
+              if(trans.fromToken == "mos")
+              total_buy_mos = total_buy_mos - Number(trans.fromAmount)
+            });
+            db_connect.collection('transactions')
+            .find({walletAddress : req.params.walletAddress})
+            .toArray(function (er, res) {
+                if(er) throw er;
+                res.forEach(transaction => {
+                  if(transaction.tranType == 'BUY')
+                  total_buy_mos = total_buy_mos + Number(transaction.amount)
+                  if(transaction.tranType == 'SELL')
+                  total_buy_mos = total_buy_mos - Number(transaction.amount)
+                })
+                let walletbalance = {
+                  gah : total_buy_gah,
+                  mos : total_buy_mos,
+                }
+                response.json( walletbalance );
+            });
+          });
+    
+  });
+
+
+  recordRoutes.route("/gettotalbalance").get(function (req, response) {
+    let totalSupply = 1000000000;
+    let db_connect = dbo.getDb();
+      
+      db_connect
+          .collection("swapping")
+          .find()
+          .toArray(function (err, result) {
+            if (err) throw err;
+            let total_buy_gah = 0;
+            let total_buy_mos = 0;
+            result.forEach(trans => {
+              if(trans.toToken == "gah")
+              total_buy_gah = total_buy_gah + Number(trans.toAmount)
+              if(trans.fromToken == "gah")
+              total_buy_gah = total_buy_gah - Number(trans.fromAmount)
+              if(trans.toToken == "mos")
+              total_buy_mos = total_buy_mos + Number(trans.toAmount)
+              if(trans.fromToken == "mos")
+              total_buy_mos = total_buy_mos - Number(trans.fromAmount)
+            });
+            db_connect.collection('transactions')
+            .find()
+            .toArray(function (er, res) {
+                if(er) throw er;
+                res.forEach(transaction => {
+                  if(transaction.tranType == 'BUY')
+                  total_buy_mos = total_buy_mos + Number(transaction.amount)
+                  if(transaction.tranType == 'SELL')
+                  total_buy_mos = total_buy_mos - Number(transaction.amount)
+                })
+                let totalInfo = {
+                  gahTotalSupply : totalSupply,
+                  mosTotalSupply : totalSupply,
+                  gahDistributes : total_buy_gah,
+                  mosDistributes : total_buy_mos,
+                  gahBalance : totalSupply - total_buy_gah,
+                  mosBalance : totalSupply - total_buy_mos,
+                }
+                response.json( totalInfo );
+              });
+            });
+      
+    });
+
 module.exports = recordRoutes;
