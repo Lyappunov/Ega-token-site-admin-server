@@ -346,7 +346,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
       toToken: req.body.toToken,
       fromAmount: req.body.fromAmount,
       toAmount : req.body.toAmount,
-      swapDate : dateRange[1]
+      exchangeDate : dateRange[1]
     };
     db_connect.collection("exchange").insertOne(myobj, function (err, res) {
       if (err) throw err;
