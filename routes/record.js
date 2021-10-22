@@ -318,6 +318,40 @@ recordRoutes.route("/record/login").post(function (req, res) {
     });
   });
 
+  recordRoutes.route("/record/swapping").post(function (req, response) {
+    let db_connect = dbo.getDb();
+    let myobj = {
+      name: req.body.name,
+      walletAddress: req.body.walletAddress,
+      fromToken: req.body.fromToken,
+      toToken: req.body.toToken,
+      fromAmount: req.body.fromAmount,
+      toAmount : req.body.toAmount,
+      swapDate : req.body.swapDate
+    };
+    db_connect.collection("swapping").insertOne(myobj, function (err, res) {
+      if (err) throw err;
+      response.json(res);
+    });
+  });
+
+  recordRoutes.route("/record/exchange").post(function (req, response) {
+    let db_connect = dbo.getDb();
+    let myobj = {
+      name: req.body.name,
+      walletAddress: req.body.walletAddress,
+      fromToken: req.body.fromToken,
+      toToken: req.body.toToken,
+      fromAmount: req.body.fromAmount,
+      toAmount : req.body.toAmount,
+      swapDate : req.body.swapDate
+    };
+    db_connect.collection("exchange").insertOne(myobj, function (err, res) {
+      if (err) throw err;
+      response.json(res);
+    });
+  });
+
   recordRoutes.route("/record/salesubscribe").post(function (req, response) {
     console.log('the request body for saving new subscribing is ', req.body)
     let dateRange = generalDateRange()
