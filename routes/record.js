@@ -351,6 +351,23 @@ recordRoutes.route("/record/login").post(function (req, res) {
       });
   });
 
+  recordRoutes.route("/subscribeupdate/:id").post(function (req, response) {
+    let db_connect = dbo.getDb();
+    let myquery = { _id: ObjectId( req.params.id )};
+    let newvalues = {
+      $set: {
+        paymentState : 'paid'
+      },
+    };
+    db_connect
+      .collection("salesubscribe")
+      .updateOne(myquery, newvalues, function (err, res) {
+        if (err) throw err;
+        console.log("subscribe paid");
+        response.json(res);
+      });
+  });
+
   recordRoutes.route("/transaction").get(function (req, res) {
     let db_connect = dbo.getDb();
     db_connect
