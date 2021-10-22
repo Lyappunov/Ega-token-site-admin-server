@@ -560,16 +560,16 @@ recordRoutes.route("/record/login").post(function (req, res) {
           const totalSupply = 1000000000;
           let db_connectinfo = dbo.getDb();
           db_connectinfo
-            .collection("transactions")
+            .collection("swapping")
             .find({})
             .toArray(function (err, result) {
               if (err) throw err;
               let total_buy = 0;
               result.forEach(trans => {
-                if(trans.tranType == "BUY")
-                total_buy = total_buy + Number(trans.amount)
-                if(trans.tranType == "SELL")
-                total_buy = total_buy - Number(trans.amount)
+                if(toToken =='gah')
+                total_buy = total_buy + Number(trans.toAmount);
+                if(fromToken == 'gah')
+                total_buy = total_buy - Number(trans.fromAmount);
               });
               let gah = {
                 distributes : total_buy,
@@ -642,16 +642,16 @@ recordRoutes.route("/record/login").post(function (req, res) {
           const totalSupply = 1000000000;
           let db_connectinfo = dbo.getDb();
           db_connectinfo
-            .collection("transactions")
+            .collection("swapping")
             .find({})
             .toArray(function (err, result) {
               if (err) throw err;
               let total_buy = 0;
               result.forEach(trans => {
-                if(trans.tranType == "BUY")
-                total_buy = total_buy + Number(trans.amount)
-                if(trans.tranType == "SELL")
-                total_buy = total_buy - Number(trans.amount)
+                if(trans.toToken == "gah")
+                total_buy = total_buy + Number(trans.toAmount)
+                if(trans.fromToken == "gah")
+                total_buy = total_buy - Number(trans.fromAmount)
               });
               let gah = {
                 distributes : total_buy,
@@ -697,16 +697,16 @@ recordRoutes.route("/record/login").post(function (req, res) {
     let db_connect = dbo.getDb();
       // let myquery = { _id: ObjectId( req.params.id )};
       db_connect
-          .collection("transactions")
+          .collection("swapping")
           .find({})
           .toArray(function (err, result) {
             if (err) throw err;
             let total_buy = 0;
             result.forEach(trans => {
-              if(trans.tranType == "BUY")
-              total_buy = total_buy + Number(trans.amount)
-              if(trans.tranType == "SELL")
-              total_buy = total_buy - Number(trans.amount)
+              if(trans.toToken == "gah")
+              total_buy = total_buy + Number(trans.toAmount)
+              if(trans.fromToken == "gah")
+              total_buy = total_buy - Number(trans.fromAmount)
             });
             let gah = {
               distributes : total_buy,
