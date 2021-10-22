@@ -331,6 +331,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
       paymentKind : req.body.paymentKind,
       usdPrice : req.body.usdPrice,
       eurPrice : req.body.eurPrice,
+      address : req.body.address,
       paymentState:req.body.paymentState
     };
     db_connect.collection("saleSubscribe").insertOne(myobj, function (err, res) {
