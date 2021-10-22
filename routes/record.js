@@ -566,9 +566,9 @@ recordRoutes.route("/record/login").post(function (req, res) {
               if (err) throw err;
               let total_buy = 0;
               result.forEach(trans => {
-                if(toToken =='gah')
+                if(trans.toToken =='gah')
                 total_buy = total_buy + Number(trans.toAmount);
-                if(fromToken == 'gah')
+                if(trans.fromToken == 'gah')
                 total_buy = total_buy - Number(trans.fromAmount);
               });
               let gah = {
