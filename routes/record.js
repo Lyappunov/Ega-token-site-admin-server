@@ -360,7 +360,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
       },
     };
     db_connect
-      .collection("salesubscribe")
+      .collection("saleSubscribe")
       .updateOne(myquery, newvalues, function (err, res) {
         if (err) throw err;
         console.log("subscribe paid");
