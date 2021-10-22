@@ -319,6 +319,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
   });
 
   recordRoutes.route("/record/swapping").post(function (req, response) {
+    let dateRange = generalDateRange()
     let db_connect = dbo.getDb();
     let myobj = {
       name: req.body.name,
@@ -327,7 +328,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
       toToken: req.body.toToken,
       fromAmount: req.body.fromAmount,
       toAmount : req.body.toAmount,
-      swapDate : req.body.swapDate
+      swapDate : dateRange[1]
     };
     db_connect.collection("swapping").insertOne(myobj, function (err, res) {
       if (err) throw err;
@@ -336,6 +337,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
   });
 
   recordRoutes.route("/record/exchange").post(function (req, response) {
+    let dateRange = generalDateRange()
     let db_connect = dbo.getDb();
     let myobj = {
       name: req.body.name,
@@ -344,7 +346,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
       toToken: req.body.toToken,
       fromAmount: req.body.fromAmount,
       toAmount : req.body.toAmount,
-      swapDate : req.body.swapDate
+      swapDate : dateRange[1]
     };
     db_connect.collection("exchange").insertOne(myobj, function (err, res) {
       if (err) throw err;
