@@ -504,7 +504,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
       });
   });
 
-  recordRoutes.route("/egaprice").get(asyncHandler(async function (req, response) {
+  recordRoutes.route("/egaprice_origin").get(asyncHandler(async function (req, response) {
     https.get('https://api.coingecko.com/api/v3/coins/bitcoin', (resp) => {
       let data = '';
 
@@ -525,12 +525,71 @@ recordRoutes.route("/record/login").post(function (req, res) {
     })
   }))
 
+  recordRoutes.route("/egaprice").get(asyncHandler(async function (req, response) {
+    https.get('https://api.coingecko.com/api/v3/coins/bitcoin', (resp) => {
+      let data = '';
+
+        resp.on('data', (chunk) => {
+            data += chunk;
+        });
+
+        resp.on('end', () => {
+          let btc_usd = JSON.parse(data).market_data.current_price.usd;
+          let totalSupply = 1000000000;
+          let db_connectinfo = dbo.getDb();
+          db_connectinfo
+            .collection("swapping")
+            .find({})
+            .toArray(function (err, result) {
+              if (err) throw err;
+              let total_buy = 0;
+              result.forEach(trans => {
+                if(trans.toToken =='gah')
+                total_buy = total_buy + Number(trans.toAmount);
+                if(trans.fromToken == 'gah')
+                total_buy = total_buy - Number(trans.fromAmount);
+              });
+              let gah = {
+                distributes : total_buy,
+                balance : totalSupply - total_buy,
+                totalSupply : totalSupply
+              };
+              bitquery.loadBitqueryDataBTCbalance().then(btc=>{
+                let btcBalance = btc.data.bitcoin.outputs[0].value;
+                let ega_price_cal = (( (btcBalance*0.775) / (gah.balance *1000))) * Number(btc_usd);
+                response.json(ega_price_cal.toFixed(11));  
+              })
+            });
+        })
+    })
+  }))
+
+
   recordRoutes.route("/egabalance").get(asyncHandler(async function (req, response) {
 
-    priceClss.getBalanceInWallet().then(bal =>{
+    let totalSupply = 1000000000;
+    let db_connectinfo = dbo.getDb();
+    db_connectinfo
+      .collection("swapping")
+      .find({})
+      .toArray(function (err, result) {
+        if (err) throw err;
+        let total_buy = 0;
+        result.forEach(trans => {
+          if(trans.toToken =='gah')
+          total_buy = total_buy + Number(trans.toAmount);
+          if(trans.fromToken == 'gah')
+          total_buy = total_buy - Number(trans.fromAmount);
+        });
+        let gah = {
+          distributes : total_buy,
+          balance : totalSupply - total_buy,
+          totalSupply : totalSupply
+        };
+
+        response.json((gah.balance).toFixed(5));  
         
-        response.json(bal);  
-    });
+      });
   
   }))
 
@@ -557,7 +616,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
           let btc_eur = JSON.parse(data).market_data.current_price.eur;
           let bnb_usd = Number(btc_usd)/Number(btc_bnb);
 
-          const totalSupply = 1000000000;
+          let totalSupply = 1000000000;
           let db_connectinfo = dbo.getDb();
           db_connectinfo
             .collection("swapping")
