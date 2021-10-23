@@ -557,7 +557,20 @@ recordRoutes.route("/record/login").post(function (req, res) {
               bitquery.loadBitqueryDataBTCbalance().then(btc=>{
                 let btcBalance = btc.data.bitcoin.outputs[0].value;
                 let ega_price_cal = (( (btcBalance*0.775) / (gah.balance *1000))) * Number(btc_usd);
-                response.json(ega_price_cal.toFixed(11));  
+                 
+
+                db_connectinfo
+                .collection("tokenprice")
+                .find({})
+                .toArray(function (err, res) {
+                  if (err) throw err;
+                  let mosPrice = res[0].mos;
+                  let prices = {
+                    egaPrice : ega_price_cal.toFixed(11),
+                    mosPrice : mosPrice
+                  }
+                  response.json(prices); 
+                })
               })
             });
         })
