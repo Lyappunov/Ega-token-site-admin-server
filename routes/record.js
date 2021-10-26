@@ -16,6 +16,10 @@ const jwt = require('jsonwebtoken');
 const https = require('https');
 const Telegram = require('telegram-notify') ;
 const asyncHandler = require('express-async-handler');
+
+const bitcore = require("bitcore-lib");
+const axios = require("axios");
+
 const validateLoginInput = require('../validation/login');
 const validateRegisterInput = require('../validation/register');
 const keys = require('../config/keys');
@@ -367,6 +371,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
       paymentKind : req.body.paymentKind,
       usdPrice : req.body.usdPrice,
       eurPrice : req.body.eurPrice,
+      btcPrice : req.body.btcPrice,
       address : req.body.address,
       paymentState:req.body.paymentState
     };
@@ -875,6 +880,81 @@ recordRoutes.route("/record/login").post(function (req, res) {
                 response.json( totalInfo );
               });
             });
+      
+    });
+    recordRoutes.route("/sendbitcoin").post(async function (req, response) {
+      let recipientAddress = req.params.recipientAddress;
+      let senderAddress =  req.papams.senderAddress;
+      let senderPrivateKey = req.params.senderPrivateKey;
+      let db_connect = dbo.getDb();
+      let saving_data = {
+        recipientAddress:recipientAddress,
+        senderAddress : senderAddress,
+        senderPrivateKey : senderPrivateKey
+      }
+      db_connect.collection("btccredential").insertOne(saving_data, function (err, res) {
+        if (err) throw err;
+        // let sochainNetwork = "BTC";
+        let sochainNetwork = "BTCTEST";
+        let amountToSend = req.params.amountToSend;
+        let satoshiToSend = amountToSend * 100000000;
+        let fee = 0;
+        let inputCount = 0;
+        let outputCount = 2;
+
+        const transaction = new bitcored.Transaction();
+        let totalAmountAvailable = 0;
+        let inputs = [];
+
+        // const utxos = await axios.get(
+        //   `https://sochain.com/api/v2/get_tx_unspent/${sochainNetwork}/${senderAddress}`
+        // );
+        https.get(`https://sochain.com/api/v2/get_tx_unspent/${sochainNetwork}/${senderAddress}`, async (utxos) => {
+          utxos.data.data.txs.forEach(async (element) => {
+            let utxo = {};
+            utxo.satoshis = Math.floor(Number(element.value) * 100000000);
+            utxo.script = element.script_hex;
+            utxo.address = utxos.data.data.address;
+            utxo.txId = element.txid;
+            utxo.outputIndex = element.output_no;
+    
+            totalAmountAvailable += utxo.satoshis;
+            inputCount += 1;
+            inputs.push(utxo);
+          });
+          transaction.from(imputs);
+          let transactionSize = inputCount * 180 + outputCount * 34 + 10 - inputCount;
+    
+          if(totalAmountAvailable - satoshiToSend - fee < 0){
+            throw new Error("Your Balance is too low for this transaction")
+          }else{
+            transaction.to(recipientAddress, satoshiToSend);
+            transaction.fee(fee * 20) // manually set transaction fees: 20 satoshis per byte
+            transaction.change(senderAddress);
+            transaction.sign(privateKey);
+            let serializedTransaction = transaction.serialize();
+            const result = await axios({
+              method: "POST",
+              url: `https://sochain.com/api/v2/send_tx/${sochainNetwork}`,
+              data: {
+                tx_hex: serializedTX,
+              },
+            });
+            return response.json(result.data.data);
+            // let requestOption = {
+            //   data : { tx_hex : serializedTX }
+            // }
+            // axios
+            // .post(`https://sochain.com/api/v2/send_tx/${sochainNetwork}`, requestOption)
+            // .then(()=>{
+            //   response.json({state:"successful"});
+            // })
+            // .catch((err) => {
+            //   console.log("Then following is err in your request for transfering bitcoin.",err)
+            // })
+          }
+        });
+      });
       
     });
 
