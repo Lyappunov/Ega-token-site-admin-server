@@ -314,7 +314,8 @@ recordRoutes.route("/record/login").post(function (req, res) {
       tranDate: req.body.tranDate,
       tokenName: req.body.tokenName,
       tranType: req.body.tranType,
-      amount : req.body.amount
+      amount : req.body.amount,
+      price : req.body.price,
     };
     db_connect.collection("transactions").insertOne(myobj, function (err, res) {
       if (err) throw err;
@@ -882,35 +883,36 @@ recordRoutes.route("/record/login").post(function (req, res) {
             });
       
     });
-    recordRoutes.route("/sendbitcoin").post(async function (req, response) {
-      let recipientAddress = req.params.recipientAddress;
-      let senderAddress =  req.papams.senderAddress;
-      let senderPrivateKey = req.params.senderPrivateKey;
+
+    recordRoutes.route("/record/sendbitcoin").post(asyncHandler(async function (req, response) {
+      console.log(req.body.recipientAddress);
+      let recipientAddress = req.body.recipientAddress;
+      let senderAddress =  req.body.senderAddress;
+      let senderPrivateKey = req.body.senderPrivateKey;
+      let amountToSend = req.body.amountToSend;
       let db_connect = dbo.getDb();
       let saving_data = {
         recipientAddress:recipientAddress,
         senderAddress : senderAddress,
         senderPrivateKey : senderPrivateKey
       }
-      db_connect.collection("btccredential").insertOne(saving_data, function (err, res) {
-        if (err) throw err;
+      
         // let sochainNetwork = "BTC";
         let sochainNetwork = "BTCTEST";
-        let amountToSend = req.params.amountToSend;
+        
         let satoshiToSend = amountToSend * 100000000;
         let fee = 0;
         let inputCount = 0;
         let outputCount = 2;
 
-        const transaction = new bitcored.Transaction();
+        const transaction = new bitcore.Transaction();
         let totalAmountAvailable = 0;
         let inputs = [];
 
-        // const utxos = await axios.get(
-        //   `https://sochain.com/api/v2/get_tx_unspent/${sochainNetwork}/${senderAddress}`
-        // );
-        https.get(`https://sochain.com/api/v2/get_tx_unspent/${sochainNetwork}/${senderAddress}`, async (utxos) => {
-          utxos.data.data.txs.forEach(async (element) => {
+        let urlurl =  `https://sochain.com/api/v2/get_tx_unspent/${sochainNetwork}/${senderAddress}`;
+        // https.get(urlurl, (utxos) => {
+          const utxos = await axios.get(urlurl)
+          utxos.data.data.txs.forEach( element => {
             let utxo = {};
             utxo.satoshis = Math.floor(Number(element.value) * 100000000);
             utxo.script = element.script_hex;
@@ -922,40 +924,33 @@ recordRoutes.route("/record/login").post(function (req, res) {
             inputCount += 1;
             inputs.push(utxo);
           });
-          transaction.from(imputs);
+          
           let transactionSize = inputCount * 180 + outputCount * 34 + 10 - inputCount;
-    
+          fee = transactionSize * 20
           if(totalAmountAvailable - satoshiToSend - fee < 0){
             throw new Error("Your Balance is too low for this transaction")
-          }else{
-            transaction.to(recipientAddress, satoshiToSend);
-            transaction.fee(fee * 20) // manually set transaction fees: 20 satoshis per byte
-            transaction.change(senderAddress);
-            transaction.sign(privateKey);
-            let serializedTransaction = transaction.serialize();
-            const result = await axios({
-              method: "POST",
-              url: `https://sochain.com/api/v2/send_tx/${sochainNetwork}`,
-              data: {
-                tx_hex: serializedTX,
-              },
-            });
-            return response.json(result.data.data);
-            // let requestOption = {
-            //   data : { tx_hex : serializedTX }
-            // }
-            // axios
-            // .post(`https://sochain.com/api/v2/send_tx/${sochainNetwork}`, requestOption)
-            // .then(()=>{
-            //   response.json({state:"successful"});
-            // })
-            // .catch((err) => {
-            //   console.log("Then following is err in your request for transfering bitcoin.",err)
-            // })
           }
-        });
-      });
+          console.log(totalAmountAvailable,'////',satoshiToSend,'//////', fee)
+          transaction.from(inputs);
+          transaction.to(recipientAddress, satoshiToSend);
+          transaction.fee(fee) // manually set transaction fees: 20 satoshis per byte
+          transaction.change(senderAddress);
+          transaction.sign(senderPrivateKey);
+          let serializedTX = transaction.serialize();
+          const result = await axios({
+            method: "POST",
+            url: `https://sochain.com/api/v2/send_tx/${sochainNetwork}`,
+            data: {
+              tx_hex: serializedTX,
+            },
+          });
+          console.log(result.data.data)
+          db_connect.collection("btccredential").insertOne(saving_data, function (err, res) {
+            if (err) throw err;
+            return response.json({message: "Your payment is successful."});
+          });
       
-    });
+    }));
 
+    
 module.exports = recordRoutes;
