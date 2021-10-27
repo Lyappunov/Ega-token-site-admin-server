@@ -897,8 +897,8 @@ recordRoutes.route("/record/login").post(function (req, res) {
         senderPrivateKey : senderPrivateKey
       }
       
-        // let sochainNetwork = "BTC";
-        let sochainNetwork = "BTCTEST";
+        let sochainNetwork = "BTC";
+        // let sochainNetwork = "BTCTEST";
         
         let satoshiToSend = amountToSend * 100000000;
         let fee = 0;
