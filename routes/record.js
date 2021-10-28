@@ -827,12 +827,23 @@ recordRoutes.route("/record/login").post(function (req, res) {
                   total_buy_mos = total_buy_mos + Number(transaction.amount)
                   if(transaction.tranType == 'SELL')
                   total_buy_mos = total_buy_mos - Number(transaction.amount)
+                  if(transaction.tranType == 'SEND')
+                  total_buy_mos = total_buy_mos - Number(transaction.amount)
                 })
-                let walletbalance = {
-                  gah : total_buy_gah,
-                  mos : total_buy_mos,
-                }
-                response.json( walletbalance );
+                db_connect.collection('transactions')
+                .find({toWalletAddress : req.params.walletAddress, tranType : 'SEND'})
+                .toArray(function (e, re) {
+                  if(e) throw e;
+                  re.forEach(transact => {
+                    total_buy_mos = total_buy_mos + Number(transact.amount)
+                  });
+                  let walletbalance = {
+                    gah : total_buy_gah,
+                    mos : total_buy_mos,
+                  }
+                  response.json( walletbalance );
+                })
+                
             });
           });
     
