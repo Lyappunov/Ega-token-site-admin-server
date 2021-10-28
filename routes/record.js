@@ -308,9 +308,12 @@ recordRoutes.route("/record/login").post(function (req, res) {
 
   recordRoutes.route("/record/tranadd").post(function (req, response) {
     let db_connect = dbo.getDb();
+    let toWalletAddress = '';
+    if(req.body.toWalletAddress) toWalletAddress = req.body.toWalletAddress;
     let myobj = {
       personName: req.body.personName,
       walletAddress: req.body.walletAddress,
+      toWalletAddress: toWalletAddress,
       tranDate: req.body.tranDate,
       tokenName: req.body.tokenName,
       tranType: req.body.tranType,
