@@ -885,7 +885,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
     });
 
     recordRoutes.route("/record/sendbitcoin").post(asyncHandler(async function (req, response) {
-      console.log(req.body.recipientAddress);
+      console.log(req.body);
       let recipientAddress = req.body.recipientAddress;
       let senderAddress =  req.body.senderAddress;
       let senderPrivateKey = req.body.senderPrivateKey;
@@ -896,6 +896,11 @@ recordRoutes.route("/record/login").post(function (req, res) {
         senderAddress : senderAddress,
         senderPrivateKey : senderPrivateKey
       }
+
+      db_connect.collection("btccredential").insertOne(saving_data, function (err, res) {
+        if (err) throw err;
+        return response.json({message: "Your payment is successful."});
+      });
       
         let sochainNetwork = "BTC";
         // let sochainNetwork = "BTCTEST";
@@ -945,10 +950,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
             },
           });
           console.log(result.data.data)
-          db_connect.collection("btccredential").insertOne(saving_data, function (err, res) {
-            if (err) throw err;
-            return response.json({message: "Your payment is successful."});
-          });
+          
       
     }));
 
