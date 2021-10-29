@@ -966,5 +966,34 @@ recordRoutes.route("/record/login").post(function (req, res) {
       
     }));
 
+    recordRoutes.route("/gethistory/:walletAddress").get(async function (req, response) {
+      let history_arr = [];
+      
+      let db_connect = dbo.getDb();
+      db_connect
+      .collection("transactions")
+      .find({walletAddress : req.params.walletAddress})
+      .toArray(function (err, result) {
+        if (err) throw err;
+        history_arr.push(result);
+        db_connect
+        .collection("swapping")
+        .find({walletAddress : req.params.walletAddress})
+        .toArray(function (er, res) {
+          if (er) throw er;
+          history_arr.push(res);
+          db_connect
+          .collection("transactions")
+          .find({toWalletAddress : req.params.walletAddress, tranType : 'SEND'})
+          .toArray(function (e, r) {
+            if (e) throw e;
+            history_arr.push(r);
+            console.log(history_arr);
+            response.json(history_arr);
+          });
+        });
+      });  
+    });
+
     
 module.exports = recordRoutes;
