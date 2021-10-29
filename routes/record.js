@@ -36,7 +36,7 @@ function generalDateRange(){
   var thisyear = today.getFullYear();
   var lastyear = thisyear
   var beforeDay = parseInt(today.getDate()) - 10;
-  var thisMonth = today.getMonth()<10?'0'+(today.getMonth() + 1):(today.getMonth() + 1)
+  var thisMonth = today.getMonth()<9?'0'+(today.getMonth() + 1):(today.getMonth() + 1)
   var lastMonth = thisMonth
   if(beforeDay<=0)
    lastMonth = today.getMonth()<10?'0'+(today.getMonth()):(today.getMonth())
