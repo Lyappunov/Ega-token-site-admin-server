@@ -137,7 +137,8 @@ recordRoutes.route("/update/:id").post(function (req, response) {
 recordRoutes.route("/uploadphoto").post(function (req, res) {
   upload(req, res, (err) => {
     if (err) {
-      res.sendStatus(500);
+      // res.sendStatus(500);
+      res.send(err);
     }
     res.send(req.file);
   });
