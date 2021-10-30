@@ -177,7 +177,9 @@ recordRoutes.route("/record/login").post(function (req, res) {
                 if (isMatch) {
                     const payload = {
                         id: user._id,
-                        name: user.name
+                        name: user.name,
+                        avatar : user.photoName,
+                        phoneNumber : user.phonenumber
                     };
                     jwt.sign(
                         payload,
