@@ -19,6 +19,7 @@ const asyncHandler = require('express-async-handler');
 
 const bitcore = require("bitcore-lib");
 const axios = require("axios");
+const multer = require('multer');
 
 const validateLoginInput = require('../validation/login');
 const validateRegisterInput = require('../validation/register');
@@ -63,6 +64,16 @@ function generalDateRange(){
 
 const dateRangeGlobal = generalDateRange()
 
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'avatars')
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' +file.originalname)
+  }
+})
+const upload = multer({ storage: storage }).single('file')
+
 // This section will help you get a list of all the records.
 recordRoutes.route("/record").get(function (req, res) {
   let db_connect = dbo.getDb();
@@ -104,12 +115,14 @@ recordRoutes.route("/record/add").post(function (req, response) {
 
 // This section will help you update a record by id.
 recordRoutes.route("/update/:id").post(function (req, response) {
+  console.log(req.body.photoName)
   let db_connect = dbo.getDb();
   let myquery = { _id: ObjectId( req.params.id )};
   let newvalues = {
     $set: {
       name: req.body.name,
-      phonenumber: req.body.phonenumber
+      phonenumber: req.body.phonenumber,
+      photoName:req.body.photoName
     },
   };
   db_connect
@@ -119,6 +132,15 @@ recordRoutes.route("/update/:id").post(function (req, response) {
       console.log("1 document updated");
       response.json(res);
     });
+});
+
+recordRoutes.route("/uploadphoto").post(function (req, res) {
+  upload(req, res, (err) => {
+    if (err) {
+      res.sendStatus(500);
+    }
+    res.send(req.file);
+  });
 });
 
 // This section will help you delete a record
