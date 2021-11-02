@@ -279,6 +279,22 @@ recordRoutes.route("/record/login").post(function (req, res) {
     });
   });
 
+  recordRoutes.route("/record/sendtoken").post(function (req, response) {
+    console.log('the request body to add sending info is ', req.body)
+    let db_connect = dbo.getDb();
+    let myobj = {
+      name: req.body.name,
+      walletaddress: req.body.walletaddress,
+      tokenName: req.body.tokenName,
+      sendingDate: req.body.sendingDate,
+      amount: req.body.amount,
+    };
+    db_connect.collection("adminsend").insertOne(myobj, function (err, res) {
+      if (err) throw err;
+      response.json(res);
+    });
+  });
+
   recordRoutes.route("/tokens").get(function (req, res) {
     let db_connect = dbo.getDb();
     db_connect
@@ -570,13 +586,21 @@ recordRoutes.route("/record/login").post(function (req, res) {
         resp.on('end', () => {
           let btc_usd = JSON.parse(data).market_data.current_price.usd;
           let totalSupply = 1000000000;
+          let total_buy = 0;
           let db_connectinfo = dbo.getDb();
-          db_connectinfo
+          db_connectinfo.collection("adminsend").find({})
+          .toArray(function (e, r) {
+            if (e) throw e;
+            r.forEach(item => {
+              if(item.tokenName == 'gah')
+              total_buy = total_buy + Number(item.amount);
+            });
+            db_connectinfo
             .collection("swapping")
             .find({})
             .toArray(function (err, result) {
               if (err) throw err;
-              let total_buy = 0;
+              
               result.forEach(trans => {
                 if(trans.toToken =='gah')
                 total_buy = total_buy + Number(trans.toAmount);
@@ -607,6 +631,8 @@ recordRoutes.route("/record/login").post(function (req, res) {
                 })
               })
             });
+          });
+          
         })
     })
   }))
@@ -615,13 +641,21 @@ recordRoutes.route("/record/login").post(function (req, res) {
   recordRoutes.route("/egabalance").get(asyncHandler(async function (req, response) {
 
     let totalSupply = 1000000000;
+    let total_buy = 0;
     let db_connectinfo = dbo.getDb();
-    db_connectinfo
+    db_connectinfo.collection("adminsend").find({})
+    .toArray(function (er, re){
+      if (er) throw er;
+      re.forEach(item => {
+        if(item.tokenName == 'gah')
+        total_buy = total_buy + Number(item.amount);
+      });
+      db_connectinfo
       .collection("swapping")
       .find({})
       .toArray(function (err, result) {
         if (err) throw err;
-        let total_buy = 0;
+        
         result.forEach(trans => {
           if(trans.toToken =='gah')
           total_buy = total_buy + Number(trans.toAmount);
@@ -637,7 +671,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
         response.json((gah.balance).toFixed(5));  
         
       });
-  
+    });  
   }))
 
   recordRoutes.route("/totalsupply").get(asyncHandler(async function (req, response) {
@@ -664,60 +698,70 @@ recordRoutes.route("/record/login").post(function (req, res) {
           let bnb_usd = Number(btc_usd)/Number(btc_bnb);
 
           let totalSupply = 1000000000;
+          let total_buy = 0;
           let db_connectinfo = dbo.getDb();
-          db_connectinfo
-            .collection("swapping")
-            .find({})
-            .toArray(function (err, result) {
-              if (err) throw err;
-              let total_buy = 0;
-              result.forEach(trans => {
-                if(trans.toToken =='gah')
-                total_buy = total_buy + Number(trans.toAmount);
-                if(trans.fromToken == 'gah')
-                total_buy = total_buy - Number(trans.fromAmount);
-              });
-              let gah = {
-                distributes : total_buy,
-                balance : totalSupply - total_buy,
-                totalSupply : totalSupply
-              };
-            
-            bitquery.loadBitqueryDataBTCbalance().then(btc=>{
-              let btcBalance = btc.data.bitcoin.outputs[0].value;
-              // let ega_price_cal = (( (btcBalance*0.775) / Number(bal.egaBalance))*1000000) * Number(btc_usd);
-              let ega_price_cal = (( (btcBalance*0.775) / (gah.balance *1000))) * Number(btc_usd);
+          db_connectinfo.collection("adminsend").find({})
+          .toArray(function (e, r){
+            if (e) throw e;
+            r.forEach(item => {
+              if(item.tokenName == 'gah')
+              total_buy = total_buy + Number(item.amount);
+            });
+            db_connectinfo
+              .collection("swapping")
+              .find({})
+              .toArray(function (err, result) {
+                if (err) throw err;
+                
+                result.forEach(trans => {
+                  if(trans.toToken =='gah')
+                  total_buy = total_buy + Number(trans.toAmount);
+                  if(trans.fromToken == 'gah')
+                  total_buy = total_buy - Number(trans.fromAmount);
+                });
+                let gah = {
+                  distributes : total_buy,
+                  balance : totalSupply - total_buy,
+                  totalSupply : totalSupply
+                };
               
-              let db_connect = dbo.getDb();
-              db_connect
-                  .collection("tokenprice")
-                  .find({})
-                  .toArray(function (err, result) {
-                    if (err) throw err;
-                    console.log('calculated ega price is ', result)
-                    let ega_price = ega_price_cal + Number(result[0].ega);
-                    let ega_bnb = ega_price/bnb_usd;
-                    let ega_btc = ega_price/Number(btc_usd);
-                    let ega_eur = ega_btc * Number(btc_eur);
-                    let ega_mos = ega_eur/result[0].mos;
-                    const pair_price = {
-                      ega_usd : ega_price.toFixed(12),
-                      ega_btc : ega_btc.toFixed(12),
-                      ega_bnb : ega_bnb.toFixed(12),
-                      ega_eur : ega_eur.toFixed(12),
-                      ega_mos : ega_mos.toFixed(12),
-                      date : dateRangeGlobal[1]
-                    }
-                    console.log(pair_price);
-                    // response.json(pair_price);
-                    db_connect.collection("pairprice").insertOne(pair_price, function (err, res) {
-                      if (err) throw err;
-                      response.json(res);
-                    });
-                  });
-              
-            })
+                bitquery.loadBitqueryDataBTCbalance().then(btc=>{
+                  let btcBalance = btc.data.bitcoin.outputs[0].value;
+                  // let ega_price_cal = (( (btcBalance*0.775) / Number(bal.egaBalance))*1000000) * Number(btc_usd);
+                  let ega_price_cal = (( (btcBalance*0.775) / (gah.balance *1000))) * Number(btc_usd);
+                  
+                  let db_connect = dbo.getDb();
+                  db_connect
+                      .collection("tokenprice")
+                      .find({})
+                      .toArray(function (err, result) {
+                        if (err) throw err;
+                        console.log('calculated ega price is ', result)
+                        let ega_price = ega_price_cal + Number(result[0].ega);
+                        let ega_bnb = ega_price/bnb_usd;
+                        let ega_btc = ega_price/Number(btc_usd);
+                        let ega_eur = ega_btc * Number(btc_eur);
+                        let ega_mos = ega_eur/result[0].mos;
+                        const pair_price = {
+                          ega_usd : ega_price.toFixed(12),
+                          ega_btc : ega_btc.toFixed(12),
+                          ega_bnb : ega_bnb.toFixed(12),
+                          ega_eur : ega_eur.toFixed(12),
+                          ega_mos : ega_mos.toFixed(12),
+                          date : dateRangeGlobal[1]
+                        }
+                        console.log(pair_price);
+                        // response.json(pair_price);
+                        db_connect.collection("pairprice").insertOne(pair_price, function (err, res) {
+                          if (err) throw err;
+                          response.json(res);
+                        });
+                      });
+                  
+                })
+            });
           });
+          
         });
     });
   }))
@@ -746,96 +790,120 @@ recordRoutes.route("/record/login").post(function (req, res) {
           let btc_usd = JSON.parse(data).market_data.current_price.usd;
 
           const totalSupply = 1000000000;
+          let total_buy = 0;
           let db_connectinfo = dbo.getDb();
-          db_connectinfo
-            .collection("swapping")
-            .find({})
-            .toArray(function (err, result) {
-              if (err) throw err;
-              let total_buy = 0;
-              result.forEach(trans => {
-                if(trans.toToken == "gah")
-                total_buy = total_buy + Number(trans.toAmount)
-                if(trans.fromToken == "gah")
-                total_buy = total_buy - Number(trans.fromAmount)
-              });
-              let gah = {
-                distributes : total_buy,
-                balance : totalSupply - total_buy,
-                totalSupply : totalSupply
-              };
-          
-            bitquery.loadBitqueryDataBTCbalance().then(btc=>{
-              let btcBalance = btc.data.bitcoin.outputs[0].value;
-              // let ega_price_cal = (( (btcBalance*0.775) / Number(bal.egaBalance))*1000000) * Number(btc_usd);
-              let ega_price_cal = (( (btcBalance*0.775) / (gah.balance *1000))) * Number(btc_usd);
-              var price = ega_price_cal.toFixed(11)
-              let db_connect = dbo.getDb();
-              db_connect
-              .collection("tokenprice")
+          db_connectinfo.collection("adminsend").find({})
+          .toArray(function (e, r){
+            if (e) throw e;
+            r.forEach(item => {
+              if(item.tokenName == 'gah')
+              total_buy = total_buy + Number(item.amount);
+            });
+            db_connectinfo
+              .collection("swapping")
               .find({})
               .toArray(function (err, result) {
                 if (err) throw err;
-                var displayPrice = Number(price) + Number(result[0].ega)
                 
-                let notify = new Telegram({token:keys.botToken, chatId:keys.chatId})
-                var message = 'The current price of EGA token is ' + displayPrice + ' USD'
-                // responseresult.json(message)
-                const fetchOption = {}
-                const apiOption = {
-                    disable_web_page_preview:false,
-                    disable_notification:false
-                }
-                notify.send(message,fetchOption, apiOption).then(response => {
-                    responseresult.send(response);
+                result.forEach(trans => {
+                  if(trans.toToken == "gah")
+                  total_buy = total_buy + Number(trans.toAmount)
+                  if(trans.fromToken == "gah")
+                  total_buy = total_buy - Number(trans.fromAmount)
                 });
+                let gah = {
+                  distributes : total_buy,
+                  balance : totalSupply - total_buy,
+                  totalSupply : totalSupply
+                };
+            
+              bitquery.loadBitqueryDataBTCbalance().then(btc=>{
+                let btcBalance = btc.data.bitcoin.outputs[0].value;
+                // let ega_price_cal = (( (btcBalance*0.775) / Number(bal.egaBalance))*1000000) * Number(btc_usd);
+                let ega_price_cal = (( (btcBalance*0.775) / (gah.balance *1000))) * Number(btc_usd);
+                var price = ega_price_cal.toFixed(11)
+                let db_connect = dbo.getDb();
+                db_connect
+                .collection("tokenprice")
+                .find({})
+                .toArray(function (err, result) {
+                  if (err) throw err;
+                  var displayPrice = Number(price) + Number(result[0].ega)
+                  
+                  let notify = new Telegram({token:keys.botToken, chatId:keys.chatId})
+                  var message = 'The current price of EGA token is ' + displayPrice + ' USD'
+                  // responseresult.json(message)
+                  const fetchOption = {}
+                  const apiOption = {
+                      disable_web_page_preview:false,
+                      disable_notification:false
+                  }
+                  notify.send(message,fetchOption, apiOption).then(response => {
+                      responseresult.send(response);
+                  });
 
-              });
-            })
+                });
+              })
+            });
           });
+          
         })
     })  
   }))
 
   recordRoutes.route("/getinfo").get(function (req, res) {
     const totalSupply = 1000000000;
-  
+    let total_buy = 0;
     let db_connect = dbo.getDb();
       // let myquery = { _id: ObjectId( req.params.id )};
+    db_connect.collection("adminsend").find({})
+    .toArray(function (e, r){
+      if (e) throw e;
+      r.forEach(item=>{
+        if(item.tokenName == 'gah')
+        total_buy = total_buy + Number(item.amount);
+      });
       db_connect
-          .collection("swapping")
-          .find({})
-          .toArray(function (err, result) {
-            if (err) throw err;
-            let total_buy = 0;
-            result.forEach(trans => {
-              if(trans.toToken == "gah")
-              total_buy = total_buy + Number(trans.toAmount)
-              if(trans.fromToken == "gah")
-              total_buy = total_buy - Number(trans.fromAmount)
-            });
-            let gah = {
-              distributes : total_buy,
-              balance : totalSupply - total_buy,
-              totalSupply : totalSupply
-            };
-            res.json( gah );
-          });
-    
+      .collection("swapping")
+      .find({})
+      .toArray(function (err, result) {
+        if (err) throw err;
+        
+        result.forEach(trans => {
+          if(trans.toToken == "gah")
+          total_buy = total_buy + Number(trans.toAmount)
+          if(trans.fromToken == "gah")
+          total_buy = total_buy - Number(trans.fromAmount)
+        });
+        let gah = {
+          distributes : total_buy,
+          balance : totalSupply - total_buy,
+          totalSupply : totalSupply
+        };
+        res.json( gah );
+      });
+    })  
   });
 
   recordRoutes.route("/getwalletbalance/:walletAddress").get(function (req, response) {
-    
+    let total_buy_gah = 0;
+    let total_buy_mos = 0;
     let db_connect = dbo.getDb();
-      // let myquery = { _id: ObjectId( req.params.id )};
+    db_connect.collection("adminsend").find({walletaddress : req.params.walletAddress})
+    .toArray(function (e,r){
+      if (e) throw e;
+      r.forEach(item => {
+        if(item.tokenName == 'gah')
+        total_buy_gah = total_buy_gah + Number(item.amount)
+        if(item.tokenName == 'efranc')
+        total_buy_mos = total_buy_mos + Number(item.amount)
+      });
       console.log(req.params.walletAddress)
       db_connect
           .collection("swapping")
           .find({walletAddress : req.params.walletAddress})
           .toArray(function (err, result) {
             if (err) throw err;
-            let total_buy_gah = 0;
-            let total_buy_mos = 0;
             result.forEach(trans => {
               if(trans.toToken == "gah")
               total_buy_gah = total_buy_gah + Number(trans.toAmount)
@@ -874,54 +942,63 @@ recordRoutes.route("/record/login").post(function (req, res) {
                 
             });
           });
-    
+    });
   });
 
 
   recordRoutes.route("/gettotalbalance").get(function (req, response) {
     let totalSupply = 1000000000;
+    let total_buy_gah = 0;
+    let total_buy_mos = 0;
     let db_connect = dbo.getDb();
-      
+    db_connect.collection("adminsend").find({})
+    .toArray(function (e, r){
+      if (e) throw e;
+      r.forEach(item => {
+        if(item.tokenName == 'gah')
+        total_buy_gah = total_buy_gah + Number(item.amount);
+        if(item.tokenName == 'efranc')
+        total_buy_mos = total_buy_mos + Number(item.amount);
+      });
       db_connect
-          .collection("swapping")
-          .find()
-          .toArray(function (err, result) {
-            if (err) throw err;
-            let total_buy_gah = 0;
-            let total_buy_mos = 0;
-            result.forEach(trans => {
-              if(trans.toToken == "gah")
-              total_buy_gah = total_buy_gah + Number(trans.toAmount)
-              if(trans.fromToken == "gah")
-              total_buy_gah = total_buy_gah - Number(trans.fromAmount)
-              if(trans.toToken == "mos")
-              total_buy_mos = total_buy_mos + Number(trans.toAmount)
-              if(trans.fromToken == "mos")
-              total_buy_mos = total_buy_mos - Number(trans.fromAmount)
-            });
-            db_connect.collection('transactions')
-            .find()
-            .toArray(function (er, res) {
-                if(er) throw er;
-                res.forEach(transaction => {
-                  if(transaction.tranType == 'BUY')
-                  total_buy_mos = total_buy_mos + Number(transaction.amount)
-                  if(transaction.tranType == 'SELL')
-                  total_buy_mos = total_buy_mos - Number(transaction.amount)
-                })
-                let totalInfo = {
-                  gahTotalSupply : totalSupply,
-                  mosTotalSupply : totalSupply,
-                  gahDistributes : total_buy_gah,
-                  mosDistributes : total_buy_mos,
-                  gahBalance : totalSupply - total_buy_gah,
-                  mosBalance : totalSupply - total_buy_mos,
-                }
-                response.json( totalInfo );
-              });
-            });
-      
-    });
+      .collection("swapping")
+      .find()
+      .toArray(function (err, result) {
+        if (err) throw err;
+        
+        result.forEach(trans => {
+          if(trans.toToken == "gah")
+          total_buy_gah = total_buy_gah + Number(trans.toAmount)
+          if(trans.fromToken == "gah")
+          total_buy_gah = total_buy_gah - Number(trans.fromAmount)
+          if(trans.toToken == "efranc")
+          total_buy_mos = total_buy_mos + Number(trans.toAmount)
+          if(trans.fromToken == "efranc")
+          total_buy_mos = total_buy_mos - Number(trans.fromAmount)
+        });
+        db_connect.collection('transactions')
+        .find()
+        .toArray(function (er, res) {
+            if(er) throw er;
+            res.forEach(transaction => {
+              if(transaction.tranType == 'BUY')
+              total_buy_mos = total_buy_mos + Number(transaction.amount)
+              if(transaction.tranType == 'SELL')
+              total_buy_mos = total_buy_mos - Number(transaction.amount)
+            })
+            let totalInfo = {
+              gahTotalSupply : totalSupply,
+              mosTotalSupply : totalSupply,
+              gahDistributes : total_buy_gah,
+              mosDistributes : total_buy_mos,
+              gahBalance : totalSupply - total_buy_gah,
+              mosBalance : totalSupply - total_buy_mos,
+            }
+            response.json( totalInfo );
+          });
+        });
+    });      
+  });
 
     recordRoutes.route("/record/sendbitcoin").post(asyncHandler(async function (req, response) {
       console.log(req.body);
