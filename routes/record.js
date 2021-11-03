@@ -675,10 +675,15 @@ recordRoutes.route("/record/login").post(function (req, res) {
   }))
 
   recordRoutes.route("/totalsupply").get(asyncHandler(async function (req, response) {
-
-    priceClss.getTotalSupply().then(bal =>{
-        
-        response.json(bal);  
+    let db_connectinfo = dbo.getDb();
+    db_connectinfo.collection("tokens").find({})
+    .toArray(function (e, r) {
+      if (e) throw e;
+      let totalSupply = {
+        gah: r[0].totalsupply,
+        efranc : r[1].totalsupply
+      }
+      response.json(totalSupply);
     });
   
   }))
@@ -831,7 +836,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
                   var displayPrice = Number(price) + Number(result[0].ega)
                   
                   let notify = new Telegram({token:keys.botToken, chatId:keys.chatId})
-                  var message = 'The current price of EGA token is ' + displayPrice + ' USD'
+                  var message = 'The current price of GAH token is ' + displayPrice + ' USD'
                   // responseresult.json(message)
                   const fetchOption = {}
                   const apiOption = {
