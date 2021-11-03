@@ -914,9 +914,9 @@ recordRoutes.route("/record/login").post(function (req, res) {
               total_buy_gah = total_buy_gah + Number(trans.toAmount)
               if(trans.fromToken == "gah")
               total_buy_gah = total_buy_gah - Number(trans.fromAmount)
-              if(trans.toToken == "mos")
+              if(trans.toToken == "efranc")
               total_buy_mos = total_buy_mos + Number(trans.toAmount)
-              if(trans.fromToken == "mos")
+              if(trans.fromToken == "efranc")
               total_buy_mos = total_buy_mos - Number(trans.fromAmount)
             });
             db_connect.collection('transactions')
@@ -1102,5 +1102,146 @@ recordRoutes.route("/record/login").post(function (req, res) {
       });  
     });
 
-    
+    recordRoutes.route("/holder/gah").get( function (req, response) {
+      let holders = [];
+      let db_connect = dbo.getDb();
+      db_connect
+      .collection("adminsend")
+      .find({tokenName : 'gah'})
+      .toArray(function (err, res){
+        if (err) throw err;
+        res.forEach(admin => {
+          let index = holders.findIndex(item => item.name == admin.name);
+          if(index == -1) {
+            let holderBump = {
+              name: admin.name,
+              walletAddress : admin.walletaddress,
+              amount : Number(admin.amount)
+            }
+            holders.push(holderBump);
+          }
+          else {
+            if(admin.tokenName == 'gah') holders[index].amount = holders[index].amount + Number(admin.amount);
+          }
+        });
+        db_connect.collection('swapping').find()
+          .toArray(function (error, result){
+            if (error) throw error;
+            result.forEach(swap => {
+              let idx = holders.findIndex(itm => itm.name == swap.name);
+              let swappingAmount = 0;
+              if(idx == -1){
+                if(swap.toToken == 'gah'){
+                  swappingAmount = Number(swap.toAmount);
+                }
+                if(swap.fromToken == 'gah'){
+                  swappingAmount = -1 * Number(swap.fromAmount)
+                }
+                let holderBumpSwap = {
+                  name: tran.personName,
+                  walletAddress : swap.walletAddress,
+                  amount : swappingAmount
+                }
+                holders.push(holderBumpSwap);
+              }else {
+                if(swap.toToken == 'gah'){
+                  swappingAmount = Number(swap.toAmount);
+                }
+                if(swap.fromToken == 'gah'){
+                  swappingAmount = -1 * Number(swap.fromAmount)
+                }
+                holders[idx].amount = holders[idx].amount + swappingAmount;
+              }
+            })
+            return response.json(holders);
+          });  
+      });
+    });  
+
+
+    recordRoutes.route("/holder/efranc").get(async function (req, response) {
+      let holders = [];
+      let db_connect = dbo.getDb();
+      db_connect
+      .collection("adminsend")
+      .find({tokenName : 'efranc'})
+      .toArray(function (err, res){
+        if (err) throw err;
+        res.forEach(admin => {
+          let index = holders.findIndex(item => item.name == admin.name);
+          if(index == -1) {
+          
+            let holderBump = {
+              name: admin.name,
+              walletAddress : admin.walletaddress,
+              amount : Number(admin.amount)
+            }
+            holders.push(holderBump);
+          }
+          else {
+            if(admin.tokenName == 'efranc') holders[index].amount = holders[index].amount + Number(admin.amount);
+          }
+        });
+        db_connect.collection('swapping').find()
+          .toArray(function (error, result){
+            if (error) throw error;
+            result.forEach(swap => {
+              let idx = holders.findIndex(itm => itm.name == swap.name);
+              let swappingAmount = 0;
+              if(idx == -1){
+                if(swap.toToken == 'efranc'){
+                  swappingAmount = Number(swap.toAmount);
+                }
+                if(swap.fromToken == 'efranc'){
+                  swappingAmount = -1 * Number(swap.fromAmount)
+                }
+                let holderBumpSwap = {
+                  name: swap.name,
+                  walletAddress : swap.walletAddress,
+                  amount : swappingAmount
+                }
+                holders.push(holderBumpSwap);
+              }else {
+                if(swap.toToken == 'efranc'){
+                  swappingAmount = Number(swap.toAmount);
+                }
+                if(swap.fromToken == 'efranc'){
+                  swappingAmount = -1 * Number(swap.fromAmount)
+                }
+                holders[idx].amount = holders[idx].amount + swappingAmount;
+              }
+            });
+
+            db_connect.collection('transactions').find()
+            .toArray(function(e, r){
+              if(e) throw e;
+              r.forEach(tran => {
+                let id = holders.findIndex(it => it.name == tran.personName);
+                let transactionAmount = 0;
+                if(tran.tranType == 'BUY'){
+                  transactionAmount = Number(tran.amount);
+                }
+                if(tran.tranType == 'SELL'){
+                  transactionAmount = -1 * Number(tran.amount)
+                }
+                if(tran.tranType == 'SEND'){
+                  transactionAmount = -1 * Number(tran.amount)
+                }
+
+                if(id == -1){
+                  let holderBumpTran = {
+                    name: tran.personName,
+                    walletAddress : tran.walletAddress,
+                    amount : transactionAmount
+                  }
+                  holders.push(holderBumpTran);
+                } else {
+                  holders[id].amount = holders[id].amount + transactionAmount;
+                }
+              });
+              response.json(holders)
+            });
+          });
+      });
+    });
 module.exports = recordRoutes;
