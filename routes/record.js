@@ -1235,9 +1235,15 @@ recordRoutes.route("/record/login").post(function (req, res) {
                     amount : transactionAmount
                   }
                   holders.push(holderBumpTran);
+                  
+                  if(tran.tranType == 'SEND'){
+                    let i = holders.findIndex(raw => raw.walletAddress == tran.toWalletAddress)
+                    if(i != -1) holders[i].amount = holders[i].amount + Number(tran.amount);
+                  }
                 } else {
                   holders[id].amount = holders[id].amount + transactionAmount;
                 }
+
               });
               response.json(holders)
             });
