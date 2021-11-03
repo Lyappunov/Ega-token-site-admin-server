@@ -939,8 +939,8 @@ recordRoutes.route("/record/login").post(function (req, res) {
                     total_buy_mos = total_buy_mos + Number(transact.amount)
                   });
                   let walletbalance = {
-                    gah : total_buy_gah,
-                    mos : total_buy_mos,
+                    gah : total_buy_gah.toFixed(5),
+                    mos : total_buy_mos.toFixed(5),
                   }
                   response.json( walletbalance );
                 })
@@ -1235,7 +1235,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
                     amount : transactionAmount
                   }
                   holders.push(holderBumpTran);
-                  
+
                   if(tran.tranType == 'SEND'){
                     let i = holders.findIndex(raw => raw.walletAddress == tran.toWalletAddress)
                     if(i != -1) holders[i].amount = holders[i].amount + Number(tran.amount);
