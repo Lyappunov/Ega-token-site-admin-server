@@ -1096,7 +1096,13 @@ recordRoutes.route("/record/login").post(function (req, res) {
             if (e) throw e;
             history_arr.push(r);
             console.log(history_arr);
-            response.json(history_arr);
+            // response.json(history_arr);
+            db_connect.collection("adminsend").find({walletaddress : req.params.walletAddress})
+            .toArray(function (error, adres){
+              if(error) throw error;
+              history_arr.push(adres);
+              response.json(history_arr);
+            })
           });
         });
       });  
