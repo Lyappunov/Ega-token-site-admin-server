@@ -86,6 +86,17 @@ recordRoutes.route("/record").get(function (req, res) {
     });
 });
 
+recordRoutes.route("/admins").get(function (req, res) {
+  let db_connect = dbo.getDb();
+  db_connect
+    .collection("records")
+    .find({isAdmin : true})
+    .toArray(function (err, result) {
+      if (err) throw err;
+      res.json(result);
+    });
+});
+
 
 // This section will help you get a single record by id
 recordRoutes.route("/record/:id").get(function (req, res) {
@@ -122,7 +133,8 @@ recordRoutes.route("/update/:id").post(function (req, response) {
     $set: {
       name: req.body.name,
       phonenumber: req.body.phonenumber,
-      photoName:req.body.photoName
+      photoName:req.body.photoName,
+      isAdmin : req.body.isAdmin
     },
   };
   db_connect
@@ -133,7 +145,65 @@ recordRoutes.route("/update/:id").post(function (req, response) {
       response.json(res);
     });
 });
+recordRoutes.route("/adminauth/:id").get(function (req, res) {
+  let db_connect = dbo.getDb();
+  let myquery = { userID:  req.params.id };
+  db_connect
+      .collection("adminauth")
+      .findOne(myquery, function (err, result) {
+        if (err) throw err;
+        res.json(result);
+      });
+});
 
+recordRoutes.route("/updateadminauth/:id").post(function (req, response) {
+
+  let db_connect = dbo.getDb();
+  
+  let myquery = { userID: req.params.id };
+  db_connect.collection('adminauth').findOne(myquery, function(err, result){
+    if(err) throw err;
+    console.log(result)
+    if(result != null){
+      let updatevalues = {
+        $set: {
+          name: req.body.name,
+          userID:req.body.userID,
+          userEdit : req.body.userEdit,
+          tokenEdit : req.body.tokenEdit,
+          payForSale : req.body.payForSale,
+          sendToken : req.body.sendToken,
+          settingEdit : req.body.settingEdit,
+          tokenSale : req.body.tokenSale,
+        },
+      };
+      db_connect
+        .collection("adminauth")
+        .updateOne(myquery, updatevalues, function (err, res) {
+          if (err) throw err;
+          response.json(res);
+        });
+    }
+    else {
+      let newvalues = {
+          name: req.body.name,
+          userID:req.body.userID,
+          userEdit : req.body.userEdit,
+          tokenEdit : req.body.tokenEdit,
+          payForSale : req.body.payForSale,
+          sendToken : req.body.sendToken,
+          settingEdit : req.body.settingEdit,
+          tokenSale : req.body.tokenSale,
+        };
+      db_connect
+        .collection("adminauth").insertOne(newvalues, function (err, res) {
+          if (err) throw err;
+          response.json(res);
+        });
+    }
+  })
+  
+});
 recordRoutes.route("/uploadphoto").post(function (req, res) {
   upload(req, res, (err) => {
     if (err) {
@@ -179,7 +249,9 @@ recordRoutes.route("/record/login").post(function (req, res) {
                         id: user._id,
                         name: user.name,
                         avatar : user.photoName,
-                        phoneNumber : user.phonenumber
+                        phoneNumber : user.phonenumber,
+                        adminType : user.adminType?user.adminType:'',
+                        isAdmin : user.isAdmin?user.isAdmin:false
                     };
                     jwt.sign(
                         payload,
