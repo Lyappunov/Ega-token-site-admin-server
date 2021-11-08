@@ -313,7 +313,9 @@ recordRoutes.route("/record/login").post(function (req, res) {
                     name: req.body.name,
                     phonenumber: req.body.phonenumber,
                     password: req.body.password,
-                    date:current_date
+                    date:current_date,
+                    birthday:req.body.birthday,
+                    nickname : req.body.nickname
                   };
                 bcrypt.genSalt(10, (err, salt) => {
                     bcrypt.hash(newUser.password, salt, (err, hash) => {
@@ -647,7 +649,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
     })
   }))
 
-  recordRoutes.route("/egaprice").get(asyncHandler(async function (req, response) {
+  recordRoutes.route("/egaprice").get(asyncHandler(function (req, response) {
     https.get('https://api.coingecko.com/api/v3/coins/bitcoin', (resp) => {
       let data = '';
 
@@ -656,7 +658,8 @@ recordRoutes.route("/record/login").post(function (req, res) {
         });
 
         resp.on('end', () => {
-          let btc_usd = JSON.parse(data).market_data.current_price.usd;
+          let parsedData = JSON.parse(data);
+          let btc_usd = parsedData.market_data.current_price.usd;
           let totalSupply = 1000000000;
           let total_buy = 0;
           let db_connectinfo = dbo.getDb();
