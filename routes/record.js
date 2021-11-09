@@ -339,6 +339,36 @@ recordRoutes.route("/record/login").post(function (req, res) {
       
   });
 
+  recordRoutes.route("/record/verify").post(function (req, res) {
+  
+    const birthday = req.body.birthday;
+    const nickname = req.body.nickname;
+    const phonenumber = req.body.phonenumber;
+    let db_connect = dbo.getDb();
+    let myquery = {   
+        phonenumber: phonenumber,
+        birthday: birthday,
+        nickname: nickname,
+    };
+    db_connect
+      .collection("records")
+      .findOne(myquery, function (err, user) {
+            if (err) throw err;
+            if (!user) {
+                return res.json({ status: 'failure', data : {} });
+            } else {
+              return res.json({
+                status : 'success',
+                data : {
+                  id:user._id
+                }
+              })
+            }
+            
+      })
+      
+  });
+
   recordRoutes.route("/record/tokenAdd").post(function (req, response) {
     console.log('the request body for add new token is ', req.body)
     let db_connect = dbo.getDb();
