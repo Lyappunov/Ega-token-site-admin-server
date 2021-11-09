@@ -134,7 +134,9 @@ recordRoutes.route("/update/:id").post(function (req, response) {
       name: req.body.name,
       phonenumber: req.body.phonenumber,
       photoName:req.body.photoName,
-      isAdmin : req.body.isAdmin
+      isAdmin : req.body.isAdmin,
+      birthday : req.body.birthday,
+      nickname : req.body.nickname
     },
   };
   db_connect
