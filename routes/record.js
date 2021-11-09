@@ -584,6 +584,29 @@ recordRoutes.route("/record/login").post(function (req, res) {
       });
   });
 
+  recordRoutes.route("/reservation/:id").post(function (req, response) {
+    let db_connect = dbo.getDb();
+    let myquery = { _id: ObjectId( req.params.id )};
+    db_connect
+      .collection("records")
+      .findOne(myquery, function (e, result) {
+        if (e) throw e;
+        
+        let newvalues = {
+          $set: {
+            paymentState : 'reserved'
+          },
+        };
+        db_connect
+          .collection("saleSubscribe")
+          .updateOne(myquery, newvalues, function (err, res) {
+            if (err) throw err;
+            console.log(result);
+            response.json(result);
+          });
+      });
+  });
+
   recordRoutes.route("/transaction").get(function (req, res) {
     let db_connect = dbo.getDb();
     db_connect
@@ -1275,7 +1298,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
                   swappingAmount = -1 * Number(swap.fromAmount)
                 }
                 let holderBumpSwap = {
-                  name: tran.personName,
+                  name: swap.name,
                   walletAddress : swap.walletAddress,
                   amount : swappingAmount
                 }
