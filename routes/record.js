@@ -323,11 +323,6 @@ recordRoutes.route("/record/login").post(function (req, res) {
                     bcrypt.hash(newUser.password, salt, (err, hash) => {
                         if (err) throw err;
                         newUser.password = hash;
-                        // newUser
-                        //     .save()
-                        //     .then(user => {
-                        //         return res.status(200).json({message: 'User added successfully. Refreshing data...'})
-                        //     }).catch(err => console.log(err));
                         db_connect.collection("records").insertOne(newUser, function (err, use) {
                             if (err) throw err;
                             return res.status(200).json({message: 'User added successfully. Refreshing data...'})
@@ -340,25 +335,25 @@ recordRoutes.route("/record/login").post(function (req, res) {
   });
 
   recordRoutes.route("/record/verify").post(function (req, res) {
-  
+    console.log(req.body);
     const birthday = req.body.birthday;
     const nickname = req.body.nickname;
     const phonenumber = req.body.phonenumber;
     let db_connect = dbo.getDb();
     let myquery = {   
         phonenumber: phonenumber,
-        birthday: birthday,
         nickname: nickname,
     };
     db_connect
       .collection("records")
       .findOne(myquery, function (err, user) {
             if (err) throw err;
-            if (!user) {
-                return res.json({ status: 'failure', data : {} });
+            console.log(user);
+            if (user == null) {
+                return res.json({ resuc: 'failure', data : {} });
             } else {
               return res.json({
-                status : 'success',
+                resuc : 'success',
                 data : {
                   id:user._id
                 }
@@ -367,6 +362,35 @@ recordRoutes.route("/record/login").post(function (req, res) {
             
       })
       
+  });
+
+  recordRoutes.route("/record/resetpassword").post(function (req, res) {
+    console.log(req.body.userID)
+    let db_connect = dbo.getDb();
+    let myquery = {   
+        _id: ObjectId( req.body.userID )
+    };
+    if(req.body.password != req.body.password2){
+      return res.status(404).json({ message: 'your password is not matched with confirm password.' });
+    }
+    else {
+      bcrypt.genSalt(10, (err, salt) => {
+        bcrypt.hash(req.body.password, salt, (error, hash) => {
+            if (error) throw error;
+            
+            let newvalues = {
+              $set: {
+                password : hash
+              },
+            };
+            db_connect.collection("records")
+              .updateOne(myquery, newvalues, function (e, r) {
+                if (e) throw e;
+                return res.status(200).json({message: 'Your password has been successfully reset.'})
+              });
+        });
+      });
+    }    
   });
 
   recordRoutes.route("/record/tokenAdd").post(function (req, response) {
