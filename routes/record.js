@@ -586,7 +586,8 @@ recordRoutes.route("/record/login").post(function (req, res) {
 
   recordRoutes.route("/reservation/:id").post(function (req, response) {
     let db_connect = dbo.getDb();
-    let myquery = { _id: ObjectId( req.params.id )};
+    let myquery = { _id: ObjectId( req.body.subscriberID )};
+    let reservequery = {_id: ObjectId( req.params.id )}
     db_connect
       .collection("records")
       .findOne(myquery, function (e, result) {
@@ -599,7 +600,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
         };
         db_connect
           .collection("saleSubscribe")
-          .updateOne(myquery, newvalues, function (err, res) {
+          .updateOne(reservequery, newvalues, function (err, res) {
             if (err) throw err;
             console.log(result);
             response.json(result);
