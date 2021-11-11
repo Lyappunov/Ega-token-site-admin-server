@@ -493,6 +493,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
     };
     db_connect.collection("transactions").insertOne(myobj, function (err, res) {
       if (err) throw err;
+      console.log('your trans add is successful.')
       response.json(res);
     });
   });
@@ -1058,7 +1059,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
         if(item.tokenName == 'efranc')
         total_buy_mos = total_buy_mos + Number(item.amount)
       });
-      console.log(req.params.walletAddress)
+      
       db_connect
           .collection("swapping")
           .find({walletAddress : req.params.walletAddress})
@@ -1088,18 +1089,28 @@ recordRoutes.route("/record/login").post(function (req, res) {
                 })
                 db_connect.collection('transactions')
                 .find({toWalletAddress : req.params.walletAddress, tranType : 'SEND'})
-                .toArray(function (e, re) {
-                  if(e) throw e;
+                .toArray(function (errr, re) {
+                  if(errr) throw errr;
                   re.forEach(transact => {
                     total_buy_mos = total_buy_mos + Number(transact.amount)
                   });
-                  let walletbalance = {
-                    gah : total_buy_gah.toFixed(5),
-                    mos : total_buy_mos.toFixed(5),
-                  }
-                  response.json( walletbalance );
-                })
-                
+                  db_connect.collection('saleSubscribe').find({walletAddress : req.params.walletAddress})
+                  .toArray(function(errors, results){
+                    if(errors) throw errors;
+                    console.log(req.params.walletAddress)
+                    
+                    results.forEach(subscribe => {
+                      if(subscribe.paymentState == 'pending'){
+                        total_buy_mos = total_buy_mos - Number(subscribe.amount);
+                      }
+                    })
+                    let walletbalance = {
+                      gah : total_buy_gah.toFixed(5),
+                      mos : total_buy_mos.toFixed(5),
+                    }
+                    response.json( walletbalance );
+                  }); 
+                });    
             });
           });
     });
@@ -1146,15 +1157,26 @@ recordRoutes.route("/record/login").post(function (req, res) {
               if(transaction.tranType == 'SELL')
               total_buy_mos = total_buy_mos - Number(transaction.amount)
             })
-            let totalInfo = {
-              gahTotalSupply : totalSupply,
-              mosTotalSupply : totalSupply,
-              gahDistributes : total_buy_gah,
-              mosDistributes : total_buy_mos,
-              gahBalance : totalSupply - total_buy_gah,
-              mosBalance : totalSupply - total_buy_mos,
-            }
-            response.json( totalInfo );
+
+            db_connect.collection('saleSubscribe').find()
+            .toArray(function(errors, results){
+              if(errors) throw errors;
+              results.forEach(subscribe => {
+                if(subscribe.paymentState == 'pending')
+                {
+                  total_buy_mos = total_buy_mos - Number(subscribe.amount);
+                }
+              });
+              let totalInfo = {
+                gahTotalSupply : totalSupply,
+                mosTotalSupply : totalSupply,
+                gahDistributes : total_buy_gah,
+                mosDistributes : total_buy_mos,
+                gahBalance : totalSupply - total_buy_gah,
+                mosBalance : totalSupply - total_buy_mos,
+              }
+              response.json( totalInfo );
+            });
           });
         });
     });      
@@ -1173,8 +1195,8 @@ recordRoutes.route("/record/login").post(function (req, res) {
         senderPrivateKey : senderPrivateKey
       }
       
-        let sochainNetwork = "BTC";
-        // let sochainNetwork = "BTCTEST";
+        // let sochainNetwork = "BTC";
+        let sochainNetwork = "BTCTEST";
         
         let satoshiToSend = amountToSend * 100000000;
         let fee = 0;
