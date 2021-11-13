@@ -511,8 +511,8 @@ recordRoutes.route("/record/login").post(function (req, res) {
       swapDate : dateRange[1]
     };
     db_connect.collection("swapping").insertOne(myobj, function (err, res) {
-      if (err) throw err;
-      response.json(res);
+      if (err) return response.json(err);
+      else return response.json(res);
     });
   });
 
