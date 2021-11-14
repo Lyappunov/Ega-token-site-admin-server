@@ -609,7 +609,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
       });
   });
 
-  recordRoutes.route("/transaction").get(function (req, res) {
+  recordRoutes.route("/transaction_origin").get(function (req, res) {
     let db_connect = dbo.getDb();
     db_connect
       .collection("transactions")
@@ -619,6 +619,31 @@ recordRoutes.route("/record/login").post(function (req, res) {
         res.json(result);
       });
   });
+  recordRoutes.route("/transaction").get(function (req, res) {
+    let history_arr = [];
+      
+      let db_connect = dbo.getDb();
+      db_connect
+      .collection("transactions")
+      .find({})
+      .toArray(function (err, result) {
+        if (err) throw err;
+        history_arr.push(result);
+        db_connect
+        .collection("swapping")
+        .find({})
+        .toArray(function (er, re) {
+          if (er) throw er;
+          history_arr.push(re);
+          db_connect.collection("adminsend").find({})
+          .toArray(function (error, adres){
+            if(error) throw error;
+            history_arr.push(adres);
+            res.json(history_arr);
+          })
+        });
+      });
+  });  
 
   recordRoutes.route("/tokenprice").get(function (req, res) {
     let db_connect = dbo.getDb();
