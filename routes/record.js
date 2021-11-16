@@ -221,9 +221,9 @@ recordRoutes.route("/userdelete/:id").delete((req, response) => {
   let db_connect = dbo.getDb();
   let myquery = { _id: ObjectId( req.params.id )};
   db_connect.collection("records").deleteOne(myquery, function (err, obj) {
-    if (err) throw err;
+    if (err) response.send(err);
     console.log("1 document deleted");
-    response.status(obj);
+    response.send('successful!');
   });
 });
 
