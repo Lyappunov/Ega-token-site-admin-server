@@ -217,7 +217,7 @@ recordRoutes.route("/uploadphoto").post(function (req, res) {
 });
 
 // This section will help you delete a record
-recordRoutes.route("/:id").delete((req, response) => {
+recordRoutes.route("/userdelete/:id").delete((req, response) => {
   let db_connect = dbo.getDb();
   let myquery = { _id: ObjectId( req.params.id )};
   db_connect.collection("records").deleteOne(myquery, function (err, obj) {
@@ -639,6 +639,7 @@ recordRoutes.route("/record/login").post(function (req, res) {
           .toArray(function (error, adres){
             if(error) throw error;
             history_arr.push(adres);
+            console.log(history_arr);
             res.json(history_arr);
           })
         });
